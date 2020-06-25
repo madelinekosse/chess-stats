@@ -7,10 +7,9 @@
     (assoc-in state [:board rank file] piece))
 
 (defn new-piece [type color]
-    (let [moved? (contains? [:king :rook :pawn] type)]
-        { :type   type
-          :color  color
-          :moved? moved?}))
+    { :type   type
+      :color  color
+      :moved? false})
 
 (defn new-back-rank [color]
     [(new-piece :rook color)
