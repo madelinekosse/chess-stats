@@ -1,4 +1,12 @@
-(ns clochess.core-api)
+(ns clochess.core-api
+    (:require [clochess.construct :refer [new-board
+                                          get-piece]]
+              [clochess.core :refer [valid-moves-king
+                                     valid-moves-queen
+                                     valid-moves-rook
+                                     valid-moves-bishop
+                                     valid-moves-knight
+                                     valid-moves-pawn]]))
 
 (defn new-game []
     { :board          (new-board)
