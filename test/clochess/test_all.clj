@@ -5,7 +5,7 @@
               [clochess.construct]))
 
 (deftest test-all
-    "Bootstrapping with the required namespaces, finds all the firestone.* namespaces (except this one),
+    "Bootstrapping with the required namespaces, finds all the clochess.* namespaces (except this one),
     requires them, and runs all their tests."
     (let [namespaces (->> (all-ns)
                           (map str)
