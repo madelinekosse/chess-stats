@@ -1,45 +1,91 @@
 (ns clochess.core
-    (:require [clochess.construct :refer :all]
-              [clochess.debug :refer :all]))
+  (:require [clochess.construct :refer :all]
+            [clochess.debug :refer :all]))
 
-(defn out-of-bounds? [file rank]
-    (not (and (<= 0 file 7)
-              (<= 0 rank 7))))
+(defn file-rank-to-string
+  [file rank]
+  (str (char (+ 97 file)) (inc rank)))
 
-(defn is-occupied? [state file rank]
-    (not (= (get-piece state file rank) nil)))
+(defn out-of-bounds?
+  [file rank]
+  (not (and (<= 0 file 7)
+            (<= 0 rank 7))))
 
-(defn set-moved [state file rank]
-    (assoc-in state [:board rank file :moved?] true))
+(defn free?
+  [state file rank]
+  (= (get-piece state file rank) nil))
 
-(defn valid-moves-king [state file rank]
-    '('[(- file 1) (- rank 1)]
-      '[file       (- rank 1)]
-      '[(+ file 1) (- rank 1)]
-      '[(- file 1) rank]
-      '[(+ file 1) rank]
-      '[(- file 1) (+ rank 1)]
-      '[file       (+ rank 1)]
-      '[(+ file 1) (+ rank 1)]))
+(defn friendly?
+  [state file rank color]
+  (let [piece (get-piece state file rank)]
+    (= (:color piece) color)))
 
-(defn valid-moves-queen [state file rank]
-    (println "Queen movement not yet implemented"))
+(defn enemy?
+  [state file rank color]
+  (and (not (friendly? state file rank color))))
 
-(defn valid-moves-rook [state file rank]
-    (concat (map vector (range 0 8) (repeat file))
-            (map vector (repeat rank) (range 0 8))))
+(defn remove-blocked
+  [state color coords]
+  (let [free-fn           (fn [[file rank]] (free? state file rank))
+        [free not-free]   (split-with free-fn coords)
+        [file rank]       (first not-free)
+        capture-possible? (and (not (nil? file))
+                               (not (nil? rank))
+                               (enemy? state file rank color))]
+    (if capture-possible?
+      (conj free [file rank])
+      free)))
 
-(defn valid-moves-bishop [state file rank]
-    (println "Bishop movement not yet implemented"))
+(defn valid-moves-king
+  [state file rank color]
+  (remove (fn [[file rank]] (friendly? state file rank color))
+          '([(- file 1) (- rank 1)]
+            [file       (- rank 1)]
+            [(+ file 1) (- rank 1)]
+            [(- file 1) rank]
+            [(+ file 1) rank]
+            [(- file 1) (+ rank 1)]
+            [file       (+ rank 1)]
+            [(+ file 1) (+ rank 1)])))
 
-(defn valid-moves-knight [state file rank]
-    (println "Knight movement not yet implemented"))
+(defn valid-moves-queen
+  [state file rank color]
+  (println "Queen movement not yet implemented"))
 
-(defn valid-moves-pawn [state file rank]
-    (println "Pawn movement not yet implemented"))
+(defn valid-moves-rook
+  [state file rank color]
+  (let [north (map vector (repeat file) (range (inc rank) 8))
+        south (map vector (repeat file) (range (dec rank) -1 -1))
+        east  (map vector (range (inc file) 8) (repeat rank))
+        west  (map vector (range (dec file) -1 -1) (repeat rank))]
+    (concat (remove-blocked state color north)
+            (remove-blocked state color south)
+            (remove-blocked state color east)
+            (remove-blocked state color west))))
 
-;;; DEBUG
-(defn -main
-    "Debug, remove later"
-    [& args]
-    (print-board (new-game)))
+(defn valid-moves-bishop
+  [state file rank color]
+  (println "Bishop movement not yet implemented"))
+
+(defn valid-moves-knight
+  [state file rank color]
+  (println "Knight movement not yet implemented"))
+
+(defn valid-moves-pawn
+  [state file rank color]
+  (println "Pawn movement not yet implemented"))
+
+(defn valid-moves
+  [state file rank]
+  (let [piece      (get-piece state file rank)
+        color      (:color piece)
+        type       (:type piece)
+        type-moves {:king   valid-moves-king
+                    :queen  valid-moves-queen
+                    :rook   valid-moves-rook
+                    :bishop valid-moves-bishop
+                    :knight valid-moves-knight
+                    :pawn   valid-moves-pawn
+                    nil     (fn [& _] '())}
+        moves-fn   (get type-moves type)]
+    (moves-fn state file rank color)))
