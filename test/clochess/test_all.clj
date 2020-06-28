@@ -1,7 +1,6 @@
 (ns clochess.test-all
   (:require [clojure.test :refer [deftest is run-tests successful?]]
             [clochess.core]
-            [clochess.core-api]
             [clochess.construct]))
 
 (deftest test-all
