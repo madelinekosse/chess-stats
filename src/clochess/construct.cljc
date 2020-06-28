@@ -43,14 +43,14 @@
 
 (defn new-board
   []
-  (apply mapv vector [(new-back-rank :black)
-                      (new-pawn-rank :black)
-                      (new-blank-rank)
-                      (new-blank-rank)
-                      (new-blank-rank)
-                      (new-blank-rank)
+  (apply mapv vector [(new-back-rank :white)
                       (new-pawn-rank :white)
-                      (new-back-rank :white)]))
+                      (new-blank-rank)
+                      (new-blank-rank)
+                      (new-blank-rank)
+                      (new-blank-rank)
+                      (new-pawn-rank :black)
+                      (new-back-rank :black)]))
 
 (defn new-game
   []

@@ -3,8 +3,17 @@
             [clochess.debug :refer :all]))
 
 (defn file-rank-to-string
-  [file rank]
-  (str (char (+ 97 file)) (inc rank)))
+  ([coords]
+  (apply file-rank-to-string coords))
+  ([file rank]
+  (str (char (+ 97 file)) (inc rank))))
+
+(defn string-to-file-rank
+  [s]
+  (let [file (int (first s))
+        rank (int (second s))]
+    [(- file 97)
+     (- rank 49)]))
 
 (defn out-of-bounds?
   [file rank]

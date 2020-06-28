@@ -29,7 +29,7 @@
 
 (defn board-to-string
   [board]
-  (let [board     (apply mapv vector board)
+  (let [board     (reverse (apply mapv vector board))
         frame-top "  ┌─┬─┬─┬─┬─┬─┬─┬─┐\n"
         frame-mid "\n  ├─┼─┼─┼─┼─┼─┼─┼─┤\n"
         frame-bot "\n  └─┴─┴─┴─┴─┴─┴─┴─┘\n"
