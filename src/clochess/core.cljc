@@ -1,14 +1,32 @@
 (ns clochess.core
-  (:require [clochess.construct :refer :all]
+  (:require [clojure.test :refer [is]]
+            [clochess.construct :refer :all]
             [clochess.debug :refer :all]))
 
 (defn file-rank-to-string
+  {:test (fn []
+           (is (= (file-rank-to-string [0 0])
+                  (file-rank-to-string 0 0)
+                  "a1"))
+           (is (= (file-rank-to-string [7 7])
+                  (file-rank-to-string 7 7)
+                  "h8"))
+           (is (= (file-rank-to-string [3 4])
+                  (file-rank-to-string 3 4)
+                  "d5")))}
   ([coords]
-  (apply file-rank-to-string coords))
+   (apply file-rank-to-string coords))
   ([file rank]
-  (str (char (+ 97 file)) (inc rank))))
+   (str (char (+ 97 file)) (inc rank))))
 
 (defn string-to-file-rank
+  {:test (fn []
+           (is (= (string-to-file-rank "a1")
+                  [0 0]))
+           (is (= (string-to-file-rank "h8")
+                  [7 7]))
+           (is (= (string-to-file-rank "d5")
+                  [3 4])))}
   [s]
   (let [file (int (first s))
         rank (int (second s))]
@@ -16,38 +34,103 @@
      (- rank 49)]))
 
 (defn out-of-bounds?
-  [file rank]
-  (not (and (<= 0 file 7)
-            (<= 0 rank 7))))
+  {:test (fn []
+           (is (not-any? out-of-bounds? [[1 3] [6 2] [0 0] [7 7]]))
+           (is (every? out-of-bounds? [[-1 4] [1 8] [9 9] [-3 -4]])))}
+  ([[file rank]]
+   (out-of-bounds? file rank))
+  ([file rank]
+   (not (and (<= 0 file 7)
+             (<= 0 rank 7)))))
 
 (defn free?
-  [state file rank]
-  (= (get-piece state file rank) nil))
+  {:test (fn []
+           (is (-> (new-game)
+                   (free? 4 4)))
+           (is (not (-> (new-game)
+                        (free? 0 0)))))}
+  ([state [file rank]]
+   (free? state file rank))
+  ([state file rank]
+   (= (get-piece state file rank) nil)))
 
 (defn friendly?
-  [state file rank color]
+  {:test (fn []
+           (is (-> (new-game)
+                   (friendly? 0 0 :white)))
+           (is (-> (new-game)
+                   (friendly? 7 7 :black)))
+           (is (not (-> (new-game)
+                        (friendly? 0 0 :black))))
+           (is (not (-> (new-game)
+                        (friendly? 7 7 :white)))))}
+  ([state [file rank] color]
+   (friendly? state file rank color))
+  ([state file rank color]
   (let [piece (get-piece state file rank)]
-    (= (:color piece) color)))
+    (= (:color piece) color))))
+
+(def opposite-color
+  {:white :black
+   :black :white})
 
 (defn enemy?
+  {:test (fn []
+           (is (-> (new-game)
+                   (enemy? 0 0 :black)))
+           (is (-> (new-game)
+                   (enemy? 7 7 :white)))
+           (is (not (-> (new-game)
+                        (enemy? 0 0 :white))))
+           (is (not (-> (new-game)
+                        (enemy? 7 7 :black))))
+           (is (not (-> (new-game)
+                        (enemy? 4 4 :black)))))}
   [state file rank color]
-  (and (not (friendly? state file rank color))))
+  (let [piece (get-piece state file rank)]
+    (= (:color piece) (color opposite-color))))
+
+(defn capture-possible?
+  {:test (fn []
+           (is (-> (new-game)
+                   (capture-possible? 0 0 :black)))
+           (is (not (-> (new-game)
+                        (capture-possible? 0 0 :white))))
+           (is (not (-> (new-game)
+                        (capture-possible? 4 4 :white)))))}
+  [state file rank color]
+  (and (not (nil? file))
+       (not (nil? rank))
+       (enemy? state file rank color)))
 
 (defn remove-blocked
+  {:test (fn []
+           (is (= (-> (new-game)
+                      (remove-blocked :white
+                                      [[4 4] [4 5] [4 6] [4 7] [4 8]])))
+               [[4 4] [4 5] [4 6] [4 7]])
+           (is (= (-> (new-game)
+                      (remove-blocked :black
+                                      [[4 4] [4 5] [4 6] [4 7] [4 8]])))
+               [[4 4] [4 5] [4 6]])
+           (is (= (-> (new-game)
+                      (remove-blocked :white
+                                      [[4 4] [4 3] [4 2] [4 1] [4 0]])))
+               [[4 4] [4 3] [4 2]])
+           (is (= (-> (new-game)
+                      (remove-blocked :black
+                                      [[4 4] [4 3] [4 2] [4 1] [4 0]])))
+               [[4 4] [4 3] [4 2] [4 1]]))}
   [state color coords]
-  (let [free-fn           (fn [[file rank]] (free? state file rank))
-        [free not-free]   (split-with free-fn coords)
-        [file rank]       (first not-free)
-        capture-possible? (and (not (nil? file))
-                               (not (nil? rank))
-                               (enemy? state file rank color))]
-    (if capture-possible?
+  (let [[free not-free]   (split-with #(free? state %) coords)
+        [file rank]       (first not-free)]
+    (if (capture-possible? state file rank color)
       (conj free [file rank])
       free)))
 
 (defn valid-moves-king
   [state file rank color]
-  (remove (fn [[file rank]] (friendly? state file rank color))
+  (remove #(friendly? state % color)
           '([(- file 1) (- rank 1)]
             [file       (- rank 1)]
             [(+ file 1) (- rank 1)]
