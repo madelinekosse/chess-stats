@@ -65,7 +65,14 @@
 
 (defn valid-moves-bishop
   [state file rank color]
-  (println "Bishop movement not yet implemented"))
+  (let [nw  (map vector (range (dec file) -1 -1) (range (inc rank) 8))
+        sw  (map vector (range (dec file) -1 -1) (range (dec file) -1 -1))
+        ne  (map vector (range (inc file) 8) (range (inc rank) 8 ))
+        se  (map vector (range (inc file) 8) (range (dec file) -1 -1))]
+    (concat (remove-blocked state color nw)
+            (remove-blocked state color ne)
+            (remove-blocked state color sw)
+            (remove-blocked state color se))))
 
 (defn valid-moves-knight
   [state file rank color]
