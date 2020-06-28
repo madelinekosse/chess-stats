@@ -2,11 +2,11 @@
 
 (defn get-piece
   [state file rank]
-  (get-in state [:board rank file]))
+  (get-in state [:board file rank]))
 
 (defn set-piece
   [state file rank piece]
-  (assoc-in state [:board rank file] piece))
+  (assoc-in state [:board file rank] piece))
 
 (defn new-piece
   [type color]
@@ -43,14 +43,14 @@
 
 (defn new-board
   []
-  [(new-back-rank :black)
-   (new-pawn-rank :black)
-   (new-blank-rank)
-   (new-blank-rank)
-   (new-blank-rank)
-   (new-blank-rank)
-   (new-pawn-rank :white)
-   (new-back-rank :white)])
+  (apply mapv vector [(new-back-rank :black)
+                      (new-pawn-rank :black)
+                      (new-blank-rank)
+                      (new-blank-rank)
+                      (new-blank-rank)
+                      (new-blank-rank)
+                      (new-pawn-rank :white)
+                      (new-back-rank :white)]))
 
 (defn new-game
   []
