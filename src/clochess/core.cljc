@@ -74,6 +74,11 @@
             (remove-blocked state color sw)
             (remove-blocked state color se))))
 
+(defn valid-moves-queen
+  [state file rank color]
+  (concat (valid-moves-rook state file rank color)
+          (valid-moves-bishop state file rank color)))
+
 (defn valid-moves-knight
   [state file rank color]
   (println "Knight movement not yet implemented"))
