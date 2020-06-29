@@ -129,22 +129,52 @@
       free)))
 
 (defn valid-moves-king
+  {:test (fn []
+           (is (-> (new-game)
+                   (valid-moves-king 4 4 :white)
+                   (count))
+               8)
+           (is (-> (new-game)
+                   (valid-moves-king 0 0 :white)
+                   (empty?)))
+           (is (every? (set (-> (new-game)
+                                (valid-moves-king 4 4 :white)))
+                       [[3 5] [4 5] [5 5]
+                        [3 4] [5 4]
+                        [3 3] [4 3] [5 3]]))
+           (is (every? (set (-> (new-game)
+                                (valid-moves-king 4 5 :white)))
+                       [[3 6] [4 6] [5 6]
+                        [3 5] [5 5]
+                        [3 4] [4 4] [5 4]]))
+           (is (every? (set (-> (new-game)
+                                (valid-moves-king 4 5 :black)))
+                       [[3 5] [5 5]
+                        [3 4] [4 4] [5 4]])))}
   [state file rank color]
-  (remove #(friendly? state % color)
-          '([(- file 1) (- rank 1)]
-            [file       (- rank 1)]
-            [(+ file 1) (- rank 1)]
-            [(- file 1) rank]
-            [(+ file 1) rank]
-            [(- file 1) (+ rank 1)]
-            [file       (+ rank 1)]
-            [(+ file 1) (+ rank 1)])))
-
-(defn valid-moves-queen
-  [state file rank color]
-  (println "Queen movement not yet implemented"))
+  (let [surrounding [[(dec file) (inc rank)]
+                     [(dec file) rank]
+                     [(dec file) (dec rank)]
+                     [file (inc rank)]
+                     [file (dec rank)]
+                     [(inc file) (inc rank)]
+                     [(inc file) rank]
+                     [(inc file) (dec rank)]]]
+    (remove out-of-bounds? (remove #(friendly? state % color) surrounding))))
 
 (defn valid-moves-rook
+  {:test (fn []
+           (is (-> (new-game)
+                   (valid-moves-rook 0 0 :white)
+                   (empty?)))
+           (is (every? (set (-> (new-game)
+                                (valid-moves-rook 4 4 :white)))
+                       [[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
+                        [7 4] [4 3] [4 2] [4 5] [4 6]]))
+           (is (every? (set (-> (new-game)
+                                (valid-moves-rook 4 4 :black)))
+                       [[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
+                        [7 4] [4 1] [4 3] [4 2] [4 5]])))}
   [state file rank color]
   (let [north (map vector (repeat file) (range (inc rank) 8))
         south (map vector (repeat file) (range (dec rank) -1 -1))
@@ -156,6 +186,22 @@
             (remove-blocked state color west))))
 
 (defn valid-moves-bishop
+  {:test (fn []
+           (is (-> (new-game)
+                   (valid-moves-bishop 2 0 :white)
+                   (empty?)))
+           (is (every? (set (-> (new-game)
+                                (valid-moves-bishop 4 4 :white)))
+                       [[3 5] [2 6]
+                        [5 5] [6 6]
+                        [3 3] [2 2]
+                        [5 3] [6 2]]))
+           (is (every? (set (-> (new-game)
+                                (valid-moves-bishop 4 4 :black)))
+                       [[3 5]
+                        [5 5]
+                        [3 3] [2 2] [1 1]
+                        [5 3] [6 2] [7 1]])))}
   [state file rank color]
   (let [nw  (map vector (range (dec file) -1 -1) (range (inc rank) 8))
         sw  (map vector (range (dec file) -1 -1) (range (dec file) -1 -1))

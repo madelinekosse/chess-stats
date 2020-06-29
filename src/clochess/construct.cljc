@@ -24,7 +24,7 @@
 
 (defn new-pawn-rank
   {:test (fn []
-           (is (every? #(= % (new-piece :pawn :white)) (new-pawn-rank :white))))}
+           (is (every? #{(new-piece :pawn :white)} (new-pawn-rank :white))))}
   [color]
   (vec-repeat 8 (new-piece :pawn color)))
 
