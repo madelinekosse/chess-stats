@@ -180,10 +180,9 @@
         south (map vector (repeat file) (range (dec rank) -1 -1))
         east  (map vector (range (inc file) 8) (repeat rank))
         west  (map vector (range (dec file) -1 -1) (repeat rank))]
-    (concat (remove-blocked state color north)
-            (remove-blocked state color south)
-            (remove-blocked state color east)
-            (remove-blocked state color west))))
+    (apply concat
+           (map #(remove-blocked state color %)
+                [north south east west]))))
 
 (defn valid-moves-bishop
   {:test (fn []
@@ -207,19 +206,52 @@
         sw  (map vector (range (dec file) -1 -1) (range (dec file) -1 -1))
         ne  (map vector (range (inc file) 8) (range (inc rank) 8 ))
         se  (map vector (range (inc file) 8) (range (dec file) -1 -1))]
-    (concat (remove-blocked state color nw)
-            (remove-blocked state color ne)
-            (remove-blocked state color sw)
-            (remove-blocked state color se))))
+    (apply concat
+           (map #(remove-blocked state color %)
+                [nw sw ne se]))))
 
 (defn valid-moves-queen
+  {:test (fn []
+           (is (-> (new-game)
+                   (valid-moves-queen 0 0 :white)
+                   (empty?)))
+           (is (= (-> (new-game)
+                      (valid-moves-queen 4 4 :white)
+                      (count))
+                  (-> (new-game)
+                      (valid-moves-queen 4 4 :black)
+                      (count))
+                  19)))}
   [state file rank color]
   (concat (valid-moves-rook state file rank color)
           (valid-moves-bishop state file rank color)))
 
 (defn valid-moves-knight
+  {:test (fn []
+           (is (= (-> (new-game)
+                      (valid-moves-knight 0 0 :white))
+                  '([1 2])))
+           (is (every? (set (-> (new-game)
+                                (valid-moves-knight 4 4 :white)))
+                       [[3 6] [5 6]
+                        [6 5] [6 3]
+                        [3 2] [5 2]
+                        [2 5] [2 3]]))
+           (is (every? (set (-> (new-game)
+                                (valid-moves-knight 4 4 :black)))
+                       [[6 5] [6 3]
+                        [3 2] [5 2]
+                        [2 5] [2 3]])))}
   [state file rank color]
-  (println "Knight movement not yet implemented"))
+  (let [jumps [[(+ file 2) (+ rank 1)]
+               [(+ file 2) (- rank 1)]
+               [(- file 2) (+ rank 1)]
+               [(- file 2) (- rank 1)]
+               [(+ file 1) (+ rank 2)]
+               [(- file 1) (+ rank 2)]
+               [(+ file 1) (- rank 2)]
+               [(- file 1) (- rank 2)]]]
+    (remove out-of-bounds? (remove #(friendly? state % color) jumps))))
 
 (defn valid-moves-pawn
   [state file rank color]
@@ -227,15 +259,15 @@
 
 (defn valid-moves
   [state file rank]
-  (let [piece      (get-piece state file rank)
-        color      (:color piece)
-        type       (:type piece)
-        type-moves {:king   valid-moves-king
-                    :queen  valid-moves-queen
-                    :rook   valid-moves-rook
-                    :bishop valid-moves-bishop
-                    :knight valid-moves-knight
-                    :pawn   valid-moves-pawn
-                    nil     (fn [& _] '())}
-        moves-fn   (get type-moves type)]
-    (moves-fn state file rank color)))
+  (let [piece            (get-piece state file rank)
+        color            (:color piece)
+        type             (:type piece)
+        valid-moves-fns  {:king   valid-moves-king
+                          :queen  valid-moves-queen
+                          :rook   valid-moves-rook
+                          :bishop valid-moves-bishop
+                          :knight valid-moves-knight
+                          :pawn   valid-moves-pawn
+                          nil     (fn [& _] '())}
+        valid-moves-fn   (get valid-moves-fns type)]
+    (valid-moves-fn state file rank color)))
