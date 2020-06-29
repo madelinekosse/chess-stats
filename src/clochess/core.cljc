@@ -104,9 +104,11 @@
                         (enemy? 7 7 :black))))
            (is (not (-> (new-game)
                         (enemy? 4 4 :black)))))}
-  [state file rank color]
-  (let [piece (get-piece state file rank)]
-    (= (:color piece) (color opposite-color))))
+  ([state [file rank] color]
+   (enemy? state file rank color))
+  ([state file rank color]
+   (let [piece (get-piece state file rank)]
+     (= (:color piece) (color opposite-color)))))
 
 (defn capture-possible?
   {:test (fn []
@@ -155,20 +157,20 @@
            (is (-> (new-game)
                    (valid-moves-king 0 0 :white)
                    (empty?)))
-           (is (every? (set (-> (new-game)
-                                (valid-moves-king 4 4 :white)))
-                       [[3 5] [4 5] [5 5]
+           (is (= (set (-> (new-game)
+                           (valid-moves-king 4 4 :white)))
+                  (set [[3 5] [4 5] [5 5]
                         [3 4] [5 4]
-                        [3 3] [4 3] [5 3]]))
-           (is (every? (set (-> (new-game)
-                                (valid-moves-king 4 5 :white)))
-                       [[3 6] [4 6] [5 6]
+                        [3 3] [4 3] [5 3]])))
+           (is (= (set (-> (new-game)
+                           (valid-moves-king 4 5 :white)))
+                  (set [[3 6] [4 6] [5 6]
                         [3 5] [5 5]
-                        [3 4] [4 4] [5 4]]))
-           (is (every? (set (-> (new-game)
-                                (valid-moves-king 4 5 :black)))
-                       [[3 5] [5 5]
-                        [3 4] [4 4] [5 4]])))}
+                        [3 4] [4 4] [5 4]])))
+           (is (= (set (-> (new-game)
+                           (valid-moves-king 4 5 :black)))
+                  (set [[3 5] [5 5]
+                        [3 4] [4 4] [5 4]]))))}
   [state file rank color]
   (let [surrounding [[(dec file) (inc rank)]
                      [(dec file) rank]
@@ -178,21 +180,23 @@
                      [(inc file) (inc rank)]
                      [(inc file) rank]
                      [(inc file) (dec rank)]]]
-    (remove out-of-bounds? (remove #(friendly? state % color) surrounding))))
+    (remove out-of-bounds?
+            (remove #(friendly? state % color)
+                    surrounding))))
 
 (defn valid-moves-rook
   {:test (fn []
            (is (-> (new-game)
                    (valid-moves-rook 0 0 :white)
                    (empty?)))
-           (is (every? (set (-> (new-game)
-                                (valid-moves-rook 4 4 :white)))
-                       [[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
-                        [7 4] [4 3] [4 2] [4 5] [4 6]]))
-           (is (every? (set (-> (new-game)
-                                (valid-moves-rook 4 4 :black)))
-                       [[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
-                        [7 4] [4 1] [4 3] [4 2] [4 5]])))}
+           (is (= (set (-> (new-game)
+                           (valid-moves-rook 4 4 :white)))
+                  (set [[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
+                        [7 4] [4 3] [4 2] [4 5] [4 6]])))
+           (is (= (set (-> (new-game)
+                           (valid-moves-rook 4 4 :black)))
+                  (set [[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
+                        [7 4] [4 1] [4 3] [4 2] [4 5]]))))}
   [state file rank color]
   (let [north (map vector (repeat file) (range (inc rank) 8))
         south (map vector (repeat file) (range (dec rank) -1 -1))
@@ -207,18 +211,16 @@
            (is (-> (new-game)
                    (valid-moves-bishop 2 0 :white)
                    (empty?)))
-           (is (every? (set (-> (new-game)
-                                (valid-moves-bishop 4 4 :white)))
-                       [[3 5] [2 6]
+           (is (= (set (-> (new-game)
+                           (valid-moves-bishop 4 4 :white)))
+                  (set [[3 5] [2 6]
                         [5 5] [6 6]
                         [3 3] [2 2]
-                        [5 3] [6 2]]))
-           (is (every? (set (-> (new-game)
-                                (valid-moves-bishop 4 4 :black)))
-                       [[3 5]
-                        [5 5]
-                        [3 3] [2 2] [1 1]
-                        [5 3] [6 2] [7 1]])))}
+                        [5 3] [6 2]])))
+           (is (= (set (-> (new-game)
+                           (valid-moves-bishop 4 4 :black)))
+                  (set [[3 5] [5 5] [3 3] [2 2]
+                        [1 1] [5 3] [6 2] [7 1]]))))}
   [state file rank color]
   (let [nw  (map vector (range (dec file) -1 -1) (range (inc rank) 8))
         sw  (map vector (range (dec file) -1 -1) (range (dec file) -1 -1))
@@ -249,17 +251,17 @@
            (is (= (-> (new-game)
                       (valid-moves-knight 0 0 :white))
                   '([1 2])))
-           (is (every? (set (-> (new-game)
-                                (valid-moves-knight 4 4 :white)))
-                       [[3 6] [5 6]
+           (is (= (set (-> (new-game)
+                           (valid-moves-knight 4 4 :white)))
+                  (set [[3 6] [5 6]
                         [6 5] [6 3]
                         [3 2] [5 2]
-                        [2 5] [2 3]]))
-           (is (every? (set (-> (new-game)
-                                (valid-moves-knight 4 4 :black)))
-                       [[6 5] [6 3]
+                        [2 5] [2 3]])))
+           (is (= (set (-> (new-game)
+                           (valid-moves-knight 4 4 :black)))
+                  (set [[6 5] [6 3]
                         [3 2] [5 2]
-                        [2 5] [2 3]])))}
+                        [2 5] [2 3]]))))}
   [state file rank color]
   (let [jumps [[(+ file 2) (+ rank 1)]
                [(+ file 2) (- rank 1)]
@@ -269,16 +271,50 @@
                [(- file 1) (+ rank 2)]
                [(+ file 1) (- rank 2)]
                [(- file 1) (- rank 2)]]]
-    (remove out-of-bounds? (remove #(friendly? state % color) jumps))))
+    (remove out-of-bounds?
+            (remove #(friendly? state % color)
+                    jumps))))
 
 (defn valid-moves-pawn
+  {:test (fn []
+           (is (= (set (-> (new-game)
+                           (valid-moves-pawn 1 1 :white)))
+                  (set [[1 2] [1 3]])))
+           (is (= (-> (new-game)
+                      (set-piece 2 2 (assoc (new-piece :pawn :white)
+                                            :moved?
+                                            true))
+                      (valid-moves-pawn 2 2 :white))
+                  '([2 3])))
+           (is (= (set (-> (new-game)
+                           (set-piece 2 2 (new-piece :pawn :black))
+                           (valid-moves-pawn 1 1 :white)))
+                  (set [[1 2] [1 3] [2 2]])))
+           (is (empty? (-> (new-game)
+                           (set-piece 0 5 (new-piece :pawn :black))
+                           (set-piece 1 5 (new-piece :pawn :black))
+                           (set-piece 2 5 (new-piece :pawn :black))
+                           (valid-moves-pawn 1 6 :black)))))}
   [state file rank color]
   (let [moved?    (:moved? (get-piece state file rank))
-        direction (:color {:white 1
-                           :black -1})]
-    nil))
+        direction (color {:white 1
+                          :black -1})
+        one-step  [[file (+ rank direction)]]
+        two-steps (if (not moved?)
+                    [[file (+ rank (* direction 2))]]
+                    [])
+        forward   (concat one-step two-steps)
+        diagonals [[(dec file) (+ rank direction)]
+                   [(inc file) (+ rank direction)]]]
+    (concat (take-while #(free? state %)
+                        forward)
+            (filter #(enemy? state % color)
+                    diagonals))))
 
 (defn valid-moves
+  {:test (fn []
+           (is (empty? (-> (new-game)
+                           (valid-moves 3 3)))))}
   [state file rank]
   (let [piece            (get-piece state file rank)
         color            (:color piece)

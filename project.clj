@@ -17,7 +17,7 @@
 ;; along with CloChess.  If not, see <https://www.gnu.org/licenses/>.
 
 (defproject clochess "0.1.0-SNAPSHOT"
-  :description "A simple chess game engine"
+  :description "A chess library"
   :url "https://github.com/Anders-E/Chess"
   :license {:name "LGPL-3.0-or-later"
             :url "https://www.gnu.org/licenses/lgpl-3.0.html"}
