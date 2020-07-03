@@ -67,7 +67,7 @@
              (<= 0 rank 7)))))
 
 (defn free?
-  "True if the given square is not occupied."
+  "True if the given square is not occupied. Otherwise false."
   {:test (fn []
            (is (and (-> new-game
                         (free? 4 4))))
