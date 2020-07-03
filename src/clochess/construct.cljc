@@ -17,15 +17,20 @@
 ;; along with CloChess.  If not, see <https://www.gnu.org/licenses/>.
 
 (ns clochess.construct
-  (:require [clojure.test :refer [is]]))
+  (:require [clojure.math.combinatorics :refer [permuted-combinations]]
+            [clojure.test :refer [is]]
+            [clochess.util :refer [vec-repeat]]))
 
 (defn new-piece
+  "Create a piece of given type and color."
   [type color]
   {:type   type
    :color  color
    :moved? false})
 
 (defn new-back-rank
+  "Creates a back rank of given color. Pieces are placed like at the start
+   of a standard chess game."
   [color]
   [(new-piece :rook color)
    (new-piece :knight color)
@@ -36,68 +41,71 @@
    (new-piece :knight color)
    (new-piece :rook color)])
 
-(defn vec-repeat
-  [n x]
-  (vec (repeat n x)))
-
-(defn new-pawn-rank
+(defn pawn-rank
+  "Creates a rank filled with pawns of the given color."
   {:test (fn []
-           (is (every? #{(new-piece :pawn :white)} (new-pawn-rank :white))))}
+           (is (every? #{(new-piece :pawn :white)} (pawn-rank :white))))}
   [color]
   (vec-repeat 8 (new-piece :pawn color)))
 
-(defn new-blank-rank
-  {:test (fn []
-           (is (every? nil? (new-blank-rank))))}
-  []
+(def blank-rank
+  "A rank with no pieces on it."
   (vec-repeat 8 nil))
 
-(defn new-blank-board
-  {:test (fn []
-           (is (->> (new-blank-board)
-                    (flatten)
-                    (every? nil?)))
-           (is (= (-> (new-blank-board)
-                      (flatten)
-                      (count))
-                  64)))}
-  []
+(def blank-board
+  "A board with no pieces on it."
   (vec-repeat 8 (vec-repeat 8 nil)))
 
 
-(defn new-board
-  []
+(def standard-board
+  "A board with the initial position of standard chess."
   (apply mapv vector [(new-back-rank :white)
-                      (new-pawn-rank :white)
-                      (new-blank-rank)
-                      (new-blank-rank)
-                      (new-blank-rank)
-                      (new-blank-rank)
-                      (new-pawn-rank :black)
+                      (pawn-rank :white)
+                      blank-rank
+                      blank-rank
+                      blank-rank
+                      blank-rank
+                      (pawn-rank :black)
                       (new-back-rank :black)]))
 
-(defn new-game
-  []
-  {:board          (new-board)
+(def new-game
+  "Beginning state for a standard chess game."
+  {:board          standard-board
    :player-in-turn :white
-   :move-number    1})
+   :move-number    1
+   :halfmove-clock 0})
+
+(def new-blank-game
+  "Beginning state for a chess game but with no pieces on the board."
+  {:board          blank-board
+   :player-in-turn :white
+   :move-number    1
+   :halfmove-clock 0})
+
+(def all-coords
+  "All possible file rank tuples for a chessboard."
+  (permuted-combinations (concat (range 8)
+                                 (range 8))
+                         2))
 
 (defn get-piece
+  "Get piece at square."
   {:test (fn []
-           (is (= (-> (new-game)
+           (is (= (-> new-game
                       (get-piece 0 0))
                   (new-piece :rook :white)))
-           (is (= (-> (new-game)
+           (is (= (-> new-game
                       (get-piece 0 7))
                   (new-piece :rook :black)))
-           (is (nil? (-> (new-game)
+           (is (nil? (-> new-game
                          (get-piece 4 4)))))}
   [state file rank]
   (get-in state [:board file rank]))
 
 (defn set-piece
+  "Place piece at square."
   {:test (fn []
-           (is (-> (new-game)
+           (is (-> new-game
                    (set-piece 0 0 true)
                    (get-piece 0 0))))}
   [state file rank piece]

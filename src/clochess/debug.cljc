@@ -18,8 +18,7 @@
 
 (ns clochess.debug)
 
-;; Simple Graphics useful for debugging
-(def color-type-unicode {:white {:king   "♚"
+(def color&type->unicode {:white {:king   "♚"
                                  :queen  "♛"
                                  :rook   "♜"
                                  :bishop "♝"
@@ -31,21 +30,22 @@
                                  :bishop "♗"
                                  :knight "♘"
                                  :pawn   "♙"}})
-(defn piece-to-unicode
+
+(defn piece->unicode
   [piece]
   (let [type (:type piece)
         color (:color piece)]
-    (or (get-in color-type-unicode [color type]) " ")))
+    (or (get-in color&type->unicode [color type]) " ")))
 
-(defn rank-to-string
+(defn rank->str
   [i rank]
   (let [index (- 8 i)]
     (str index
          " |"
-         (apply str (interpose "│" (map piece-to-unicode rank)))
+         (apply str (interpose "│" (map piece->unicode rank)))
          "|")))
 
-(defn board-to-string
+(defn board->str
   [board]
   (let [board     (reverse (apply mapv vector board))
         frame-top "  ┌─┬─┬─┬─┬─┬─┬─┬─┐\n"
@@ -54,10 +54,10 @@
         letters   "   a b c d e f g h"]
     (str frame-top
          (apply str (interpose frame-mid
-                               (map-indexed rank-to-string board)))
+                               (map-indexed rank->str board)))
          frame-bot
          letters)))
 
 (defn print-board
   [state]
-  (println (board-to-string (:board state))))
+  (println (board->str (:board state))))

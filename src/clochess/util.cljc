@@ -16,12 +16,18 @@
 ;; You should have received a copy of the GNU Lesser General Public License
 ;; along with CloChess.  If not, see <https://www.gnu.org/licenses/>.
 
-(defproject clochess "0.1.0-SNAPSHOT"
-  :description "A chess library"
-  :url "https://github.com/Anders-E/Chess"
-  :license {:name "LGPL-3.0-or-later"
-            :url "https://www.gnu.org/licenses/lgpl-3.0.html"}
-  :dependencies [[org.clojure/clojure "1.10.1"]
-                 [org.clojure/math.combinatorics "0.1.6"]
-                 [instaparse "1.4.10"]]
-  :repl-options {:init-ns clochess.core})
+(ns clochess.util
+  (:require [clojure.test :refer [is]]))
+
+(defn in?
+  "Check if value is in collection."
+  {:test (fn []
+           (is (in? 1 [1 2 3]))
+           (is (not (in? 4 [1 2 3]))))}
+  [x coll]
+  (not (nil? (some #(= % x) coll))))
+
+(defn vec-repeat
+  "Same as clojure.core.repeat but returns a vector instead of a list."
+  [n x]
+  (vec (repeat n x)))

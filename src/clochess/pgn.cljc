@@ -16,12 +16,16 @@
 ;; You should have received a copy of the GNU Lesser General Public License
 ;; along with CloChess.  If not, see <https://www.gnu.org/licenses/>.
 
-(defproject clochess "0.1.0-SNAPSHOT"
-  :description "A chess library"
-  :url "https://github.com/Anders-E/Chess"
-  :license {:name "LGPL-3.0-or-later"
-            :url "https://www.gnu.org/licenses/lgpl-3.0.html"}
-  :dependencies [[org.clojure/clojure "1.10.1"]
-                 [org.clojure/math.combinatorics "0.1.6"]
-                 [instaparse "1.4.10"]]
-  :repl-options {:init-ns clochess.core})
+(ns clochess.pgn
+  (:require [instaparse.core :as insta]))
+
+(def pgn
+  (insta/parser
+   "
+    TAG-PAIR = '[' TAG-NAME WHITESPACE TAG-VALUE ']'
+    TAG-NAME = IDENTIFIER
+    TAG-VALUE = STRING
+    IDENTIFIER = #'.'* WHITESPACE
+    STRING = <'\"'> { !'\"' #'.' | '\\\"' } <'\"'>
+    <WHITESPACE> = #'\\s'*
+    "))

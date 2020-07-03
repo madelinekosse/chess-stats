@@ -19,7 +19,8 @@
 (ns clochess.test-all
   (:require [clojure.test :refer [deftest is run-tests successful?]]
             [clochess.core]
-            [clochess.construct]))
+            [clochess.construct]
+            [clochess.util]))
 
 (deftest test-all
   "Bootstrapping with the required namespaces, finds all the clochess.* namespaces (except this one),
