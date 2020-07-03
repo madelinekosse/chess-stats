@@ -172,27 +172,27 @@
      valid moves for a king at file and rank"
   {:test (fn []
            (is (-> new-game
-                   (valid-moves-king 4 4 :white)
+                   (valid-moves-king :white 4 4)
                    (count))
                8)
            (is (-> new-game
-                   (valid-moves-king 0 0 :white)
+                   (valid-moves-king :white 0 0)
                    (empty?)))
            (is (= (set (-> new-game
-                           (valid-moves-king 4 4 :white)))
+                           (valid-moves-king :white 4 4)))
                   (set [[3 5] [4 5] [5 5]
                         [3 4] [5 4]
                         [3 3] [4 3] [5 3]])))
            (is (= (set (-> new-game
-                           (valid-moves-king 4 5 :white)))
+                           (valid-moves-king :white 4 5)))
                   (set [[3 6] [4 6] [5 6]
                         [3 5] [5 5]
                         [3 4] [4 4] [5 4]])))
            (is (= (set (-> new-game
-                           (valid-moves-king 4 5 :black)))
+                           (valid-moves-king :black 4 5)))
                   (set [[3 5] [5 5]
                         [3 4] [4 4] [5 4]]))))}
-  [state file rank color]
+  [state color file rank]
   (let [surrounding [[(dec file) (inc rank)]
                      [(dec file) rank]
                      [(dec file) (dec rank)]
@@ -210,17 +210,17 @@
      valid moves for a rook at file and rank"
   {:test (fn []
            (is (-> new-game
-                   (valid-moves-rook 0 0 :white)
+                   (valid-moves-rook :white 0 0)
                    (empty?)))
            (is (= (set (-> new-game
-                           (valid-moves-rook 4 4 :white)))
+                           (valid-moves-rook :white 4 4)))
                   (set [[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
                         [7 4] [4 3] [4 2] [4 5] [4 6]])))
            (is (= (set (-> new-game
-                           (valid-moves-rook 4 4 :black)))
+                           (valid-moves-rook :black 4 4)))
                   (set [[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
                         [7 4] [4 1] [4 3] [4 2] [4 5]]))))}
-  [state file rank color]
+  [state color file rank]
   (let [north (map vector (repeat file) (range (inc rank) 8))
         south (map vector (repeat file) (range (dec rank) -1 -1))
         east  (map vector (range (inc file) 8) (repeat rank))
@@ -234,19 +234,19 @@
      valid moves for a bishop at file and rank"
   {:test (fn []
            (is (-> new-game
-                   (valid-moves-bishop 2 0 :white)
+                   (valid-moves-bishop :white 2 0)
                    (empty?)))
            (is (= (set (-> new-game
-                           (valid-moves-bishop 4 4 :white)))
+                           (valid-moves-bishop :white 4 4)))
                   (set [[3 5] [2 6]
                         [5 5] [6 6]
                         [3 3] [2 2]
                         [5 3] [6 2]])))
            (is (= (set (-> new-game
-                           (valid-moves-bishop 4 4 :black)))
+                           (valid-moves-bishop :black 4 4)))
                   (set [[3 5] [5 5] [3 3] [2 2]
                         [1 1] [5 3] [6 2] [7 1]]))))}
-  [state file rank color]
+  [state color file rank]
   (let [nw  (map vector (range (dec file) -1 -1) (range (inc rank) 8))
         sw  (map vector (range (dec file) -1 -1) (range (dec file) -1 -1))
         ne  (map vector (range (inc file) 8) (range (inc rank) 8 ))
@@ -260,38 +260,38 @@
      valid moves for a queen at file and rank"
   {:test (fn []
            (is (-> new-game
-                   (valid-moves-queen 0 0 :white)
+                   (valid-moves-queen :white 0 0)
                    (empty?)))
            (is (= (-> new-game
-                      (valid-moves-queen 4 4 :white)
+                      (valid-moves-queen :white 4 4)
                       (count))
                   (-> new-game
-                      (valid-moves-queen 4 4 :black)
+                      (valid-moves-queen :black 4 4)
                       (count))
                   19)))}
-  [state file rank color]
-  (concat (valid-moves-rook state file rank color)
-          (valid-moves-bishop state file rank color)))
+  [state color file rank]
+  (concat (valid-moves-rook state color file rank)
+          (valid-moves-bishop state color file rank)))
 
 (defn valid-moves-knight
   "Returns a list of rank-file tuples representing
      valid moves for a knight at file and rank"
   {:test (fn []
            (is (= (-> new-game
-                      (valid-moves-knight 0 0 :white))
+                      (valid-moves-knight :white 0 0))
                   '([1 2])))
            (is (= (set (-> new-game
-                           (valid-moves-knight 4 4 :white)))
+                           (valid-moves-knight :white 4 4)))
                   (set [[3 6] [5 6]
                         [6 5] [6 3]
                         [3 2] [5 2]
                         [2 5] [2 3]])))
            (is (= (set (-> new-game
-                           (valid-moves-knight 4 4 :black)))
+                           (valid-moves-knight :black 4 4)))
                   (set [[6 5] [6 3]
                         [3 2] [5 2]
                         [2 5] [2 3]]))))}
-  [state file rank color]
+  [state color file rank]
   (let [jumps [[(+ file 2) (+ rank 1)]
                [(+ file 2) (- rank 1)]
                [(- file 2) (+ rank 1)]
@@ -309,24 +309,24 @@
      valid moves for a pawn at file and rank"
   {:test (fn []
            (is (= (set (-> new-game
-                           (valid-moves-pawn 1 1 :white)))
+                           (valid-moves-pawn :white 1 1)))
                   (set [[1 2] [1 3]])))
            (is (= (-> new-game
                       (set-piece 2 2 (assoc (new-piece :pawn :white)
                                             :moved?
                                             true))
-                      (valid-moves-pawn 2 2 :white))
+                      (valid-moves-pawn :white 2 2))
                   '([2 3])))
            (is (= (set (-> new-game
                            (set-piece 2 2 (new-piece :pawn :black))
-                           (valid-moves-pawn 1 1 :white)))
+                           (valid-moves-pawn :white 1 1)))
                   (set [[1 2] [1 3] [2 2]])))
            (is (empty? (-> new-game
                            (set-piece 0 5 (new-piece :pawn :black))
                            (set-piece 1 5 (new-piece :pawn :black))
                            (set-piece 2 5 (new-piece :pawn :black))
-                           (valid-moves-pawn 1 6 :black)))))}
-  [state file rank color]
+                           (valid-moves-pawn :black 1 6)))))}
+  [state color file rank]
   (let [moved?    (:moved? (get-piece state file rank))
         direction (color {:white 1
                           :black -1})
@@ -362,7 +362,7 @@
                            :pawn   valid-moves-pawn
                            nil     (fn [& _] '())}
          valid-moves-fn   (get valid-moves-fns type)]
-     (valid-moves-fn state file rank color))))
+     (valid-moves-fn state color file rank))))
 
 (defn get-king-coords
   "Get rank-file tuple for king of given color's position.

@@ -23,8 +23,8 @@
             [clochess.util]))
 
 (deftest test-all
-  "Bootstrapping with the required namespaces, finds all the clochess.* namespaces (except this one),
-    requires them, and runs all their tests."
+  ;Bootstrapping with the required namespaces, finds all the clochess.* namespaces (except this one),
+  ;  requires them, and runs all their tests.
   (let [namespaces (->> (all-ns)
                         (map str)
                         (filter #(re-matches #"clochess\..*" %))
