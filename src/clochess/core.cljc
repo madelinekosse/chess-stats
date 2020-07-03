@@ -18,9 +18,12 @@
 
 (ns clochess.core
   (:require [clojure.test :refer [is]]
-            [clochess.construct :refer :all]
-            [clochess.debug :refer :all]
-            [clochess.pgn :refer :all]
+            [clochess.construct :refer [all-coords
+                                        get-piece
+                                        new-blank-game
+                                        new-game
+                                        new-piece
+                                        set-piece]]
             [clochess.util :refer [in?]]))
 
 (defn file&rank->str
@@ -138,21 +141,21 @@
      and cuts it off at the first square with a blocking piece.
      If that piece is an enemy piece, it is also included in the returning list"
   {:test (fn []
-           (is (= (-> new-game
+           (is (-> new-game
                       (remove-blocked :white
-                                      [[4 4] [4 5] [4 6] [4 7] [4 8]])))
+                                      [[4 4] [4 5] [4 6] [4 7] [4 8]]))
                [[4 4] [4 5] [4 6] [4 7]])
-           (is (= (-> new-game
+           (is (-> new-game
                       (remove-blocked :black
-                                      [[4 4] [4 5] [4 6] [4 7] [4 8]])))
+                                      [[4 4] [4 5] [4 6] [4 7] [4 8]]))
                [[4 4] [4 5] [4 6]])
-           (is (= (-> new-game
+           (is (-> new-game
                       (remove-blocked :white
-                                      [[4 4] [4 3] [4 2] [4 1] [4 0]])))
+                                      [[4 4] [4 3] [4 2] [4 1] [4 0]]))
                [[4 4] [4 3] [4 2]])
-           (is (= (-> new-game
+           (is (-> new-game
                       (remove-blocked :black
-                                      [[4 4] [4 3] [4 2] [4 1] [4 0]])))
+                                      [[4 4] [4 3] [4 2] [4 1] [4 0]]))
                [[4 4] [4 3] [4 2] [4 1]]))}
   [state color coords]
   (let [[free not-free]   (split-with (partial free? state) coords)
