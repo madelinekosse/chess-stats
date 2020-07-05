@@ -238,19 +238,15 @@
                    (empty?)))
            (is (= (set (-> new-game
                            (valid-moves-bishop :white 4 4)))
-                  (set [[3 5] [2 6]
-                        [5 5] [6 6]
-                        [3 3] [2 2]
-                        [5 3] [6 2]])))
+                  (set [[3 5] [2 6] [5 5] [6 6] [3 3] [2 2] [5 3] [6 2]])))
            (is (= (set (-> new-game
                            (valid-moves-bishop :black 4 4)))
-                  (set [[3 5] [5 5] [3 3] [2 2]
-                        [1 1] [5 3] [6 2] [7 1]]))))}
+                  (set [[3 5] [5 5] [3 3] [2 2] [1 1] [5 3] [6 2] [7 1]]))))}
   [state color file rank]
   (let [nw  (map vector (range (dec file) -1 -1) (range (inc rank) 8))
-        sw  (map vector (range (dec file) -1 -1) (range (dec file) -1 -1))
+        sw  (map vector (range (dec file) -1 -1) (range (dec rank) -1 -1))
         ne  (map vector (range (inc file) 8) (range (inc rank) 8 ))
-        se  (map vector (range (inc file) 8) (range (dec file) -1 -1))]
+        se  (map vector (range (inc file) 8) (range (dec rank) -1 -1))]
     (->> [nw sw ne se]
          (map (partial remove-blocked state color))
          (apply concat))))
@@ -362,14 +358,14 @@
                            :pawn   valid-moves-pawn
                            nil     (fn [& _] '())}
          valid-moves-fn   (get valid-moves-fns type)]
-     (valid-moves-fn state color file rank))))
+     (-> (valid-moves-fn state color file rank)))))
 
-(defn get-king-coords
+(defn king-coords
   "Get rank-file tuple for king of given color's position.
      Returns nil if no king of given color is found."
   {:test (fn []
            (is (= (-> new-game
-                      (get-king-coords :white))
+                      (king-coords :white))
                   [4 0])))}
   [state color]
   (->> all-coords
@@ -377,30 +373,93 @@
        (filter (partial is-type? state :king))
        (first)))
 
-(defn in-check?
+(defn check?
   "True if color is in check, otherwise false."
   {:test (fn []
            (is (-> new-blank-game
                    (set-piece 1 1 (new-piece :king :white))
                    (set-piece 2 2 (new-piece :pawn :black))
-                   (in-check? :white)))
+                   (check? :white)))
            (is (not (-> new-blank-game
                         (set-piece 1 1 (new-piece :king :white))
                         (set-piece 3 3 (new-piece :bishop :black))
-                        (in-check? :black))))
+                        (check? :black))))
            (is (not (-> new-blank-game
                         (set-piece 1 1 (new-piece :king :white))
                         (set-piece 3 3 (new-piece :pawn :black))
-                        (in-check? :white))))
+                        (check? :white))))
            (is (not (-> new-blank-game
                         (set-piece 1 1 (new-piece :king :white))
                         (set-piece 3 3 (new-piece :pawn :black))
                         (set-piece 5 5 (new-piece :bishop :black))
-                        (in-check? :white)))))}
+                        (check? :white)))))}
   [state color]
-  (let [king-coords  (get-king-coords state color)
+  (let [king-coords  (king-coords state color)
         enemy-moves  (->> all-coords
                           (filter (partial enemy? state color))
                           (map (partial valid-moves state))
                           (apply concat))]
     (in? king-coords enemy-moves)))
+
+(defn valid-move?
+  "True if a move from the starting square to the target square is valid.
+   Otherwise false."
+  {:test (fn []
+           (is (-> new-game
+                   (valid-move? 1 1 1 2)))
+           (is (not (-> new-game
+                        (valid-move? 1 1 1 4)))))}
+  [state starting-file starting-rank target-file target-rank]
+  (in? [target-file target-rank]
+       (valid-moves state starting-file starting-rank)))
+
+(defn move
+  "Attempt to move piece at starting square to target square.
+     Returns state unchanged if move is not valid."
+  {:test (fn []
+           (is (= (-> new-game
+                      (move 1 1 1 2)
+                      (get-piece 1 2)
+                      (:type))
+                  :pawn))
+           (is (nil? (-> new-game
+                         (move 1 1 1 2)
+                         (get-piece 1 1)
+                         (:type)))))}
+  [state starting-file starting-rank target-file target-rank]
+  (if (valid-move? state starting-file starting-rank target-file target-rank)
+    (let [piece (get-piece state starting-file starting-rank)]
+      (-> (set-piece state target-file target-rank piece)
+          (set-piece starting-file starting-rank nil)))
+    state))
+
+(defn move->check?
+  "True if the given move puts current player in check. Otherwise false."
+  {:test (fn []
+           (is (-> new-blank-game
+                   (set-piece 0 0 (new-piece :king :white))
+                   (set-piece 1 2 (new-piece :bishop :black))
+                   (move->check? 0 0 0 1)))
+           (is (-> new-blank-game
+                   (set-piece 0 0 (new-piece :king :white))
+                   (set-piece 1 1 (new-piece :pawn :white))
+                   (set-piece 3 3 (new-piece :bishop :black))
+                   (move->check? 1 1 1 2))))}
+  [state starting-file starting-rank target-file target-rank]
+  (let [new-state (move state
+                        starting-file
+                        starting-rank
+                        target-file
+                        target-rank)
+        color     (:player-in-turn state)]
+    (check? new-state color)))
+
+(defn end-turn
+  "End turn and set opposite player to player-in-turn."
+  {:test (fn []
+           (is (= (-> new-game
+                      (end-turn)
+                      (:player-in-turn))
+                  :black)))}
+  [state]
+  (update state :player-in-turn opposite-color))

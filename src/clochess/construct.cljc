@@ -110,3 +110,11 @@
                    (get-piece 0 0))))}
   [state file rank piece]
   (assoc-in state [:board file rank] piece))
+
+(defn get-player-in-turn
+  "Returns the player who's turn it currently is."
+  {:test (fn []
+           (is (= (get-player-in-turn new-game)
+                  :white)))}
+  [state]
+  (:player-in-turn state))
