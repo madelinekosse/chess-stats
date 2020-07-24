@@ -82,7 +82,7 @@
    :move-number    1
    :halfmove-clock 0})
 
-(def all-coords
+(def all-squares
   "All possible file rank tuples for a chessboard."
   (permuted-combinations (concat (range 8)
                                  (range 8))
@@ -106,9 +106,9 @@
   "Place piece at square."
   {:test (fn []
            (is (-> new-game
-                   (set-piece 0 0 true)
+                   (set-piece true 0 0)
                    (get-piece 0 0))))}
-  [state file rank piece]
+  [state piece file rank]
   (assoc-in state [:board file rank] piece))
 
 (defn get-player-in-turn
