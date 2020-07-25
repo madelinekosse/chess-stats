@@ -72,23 +72,17 @@
   "Beginning state for a standard chess game."
   {:board          standard-board
    :player-in-turn :white
-   :move-number    1
-   :halfmove-clock 0
    :en-passant     nil})
 
 (def new-blank-game
   "Beginning state for a chess game but with no pieces on the board."
   {:board          blank-board
    :player-in-turn :white
-   :move-number    1
-   :halfmove-clock 0
    :en-passant     nil})
 
 (def all-squares
   "All possible file rank tuples for a chessboard."
-  (permuted-combinations (concat (range 8)
-                                 (range 8))
-                         2))
+  (permuted-combinations (concat (range 8) (range 8)) 2))
 
 (defn get-piece
   "Get piece at square."

@@ -437,15 +437,6 @@
            (is (= (-> new-game
                       (end-turn)
                       (:player-in-turn))
-                  :black))
-           (is (= (-> new-game
-                      (end-turn)
-                      (end-turn)
-                      (:move-number))
-                  2)))}
+                  :black)))}
   [state]
-  (-> (if (= (:player-in-turn state)
-             :black)
-        (update state :move-number inc)
-        state)
-      (update :player-in-turn opposite-color)))
+  (update state :player-in-turn opposite-color))
