@@ -73,14 +73,16 @@
   {:board          standard-board
    :player-in-turn :white
    :move-number    1
-   :halfmove-clock 0})
+   :halfmove-clock 0
+   :en-passant     nil})
 
 (def new-blank-game
   "Beginning state for a chess game but with no pieces on the board."
   {:board          blank-board
    :player-in-turn :white
    :move-number    1
-   :halfmove-clock 0})
+   :halfmove-clock 0
+   :en-passant     nil})
 
 (def all-squares
   "All possible file rank tuples for a chessboard."
@@ -92,24 +94,34 @@
   "Get piece at square."
   {:test (fn []
            (is (= (-> new-game
-                      (get-piece 0 0))
+                      (get-piece [0 0]))
                   (new-piece :rook :white)))
            (is (= (-> new-game
-                      (get-piece 0 7))
+                      (get-piece [0 7]))
                   (new-piece :rook :black)))
            (is (nil? (-> new-game
-                         (get-piece 4 4)))))}
-  [state file rank]
+                         (get-piece [4 4])))))}
+  [state [file rank]]
   (get-in state [:board file rank]))
 
 (defn set-piece
   "Place piece at square."
   {:test (fn []
-           (is (-> new-game
-                   (set-piece true 0 0)
-                   (get-piece 0 0))))}
-  [state piece file rank]
+           (is (= (-> new-game
+                     (set-piece (new-piece :knight :white) [0 0])
+                     (get-piece [0 0]))
+                  (new-piece :knight :white))))}
+  [state piece [file rank]]
   (assoc-in state [:board file rank] piece))
+
+(defn clear-square
+  "Clear square of any piece currently occupying it."
+  {:test (fn []
+           (is (nil? (-> new-game
+                         (clear-square [0 0])
+                         (get-piece [0 0])))))}
+  [state square]
+  (set-piece state nil square))
 
 (defn get-player-in-turn
   "Returns the player who's turn it currently is."
