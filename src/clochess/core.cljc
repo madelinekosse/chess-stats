@@ -323,23 +323,41 @@
             (filter (partial enemy? state color)
                     diagonals))))
 
+(declare move->check?)
 (defn valid-moves
   "Returns a list of rank-file tuples representing
-     valid moves for the piece at file and rank"
+     valid moves for the piece at file and rank.
+     If allow-check is false (default), the player may not
+     place own king in check."
   {:test (fn []
            (is (empty? (-> new-game
-                           (valid-moves [3 3])))))}
-  [state square]
-  (let [{:keys [color type]} (get-piece state square)
-        valid-moves-fns      {:king   valid-moves-king
-                              :queen  valid-moves-queen
-                              :rook   valid-moves-rook
-                              :bishop valid-moves-bishop
-                              :knight valid-moves-knight
-                              :pawn   valid-moves-pawn
-                              nil     (fn [& _] '())}
-        valid-moves-fn       (get valid-moves-fns type)]
-    (valid-moves-fn state color square)))
+                           (valid-moves [3 3]))))
+           (is (empty? (-> new-blank-game
+                           (set-piece (new-piece :king :white) [0 0])
+                           (set-piece (new-piece :rook :black) [1 2])
+                           (set-piece (new-piece :rook :black) [2 1])
+                           (valid-moves [0 0]))))
+           (is (empty? (-> new-blank-game
+                           (set-piece (new-piece :king :white) [0 0])
+                           (set-piece (new-piece :pawn :white) [1 1])
+                           (set-piece (new-piece :bishop :black) [3 3])
+                           (valid-moves [1 1])))))}
+  ([state square]
+   (valid-moves state false square))
+  ([state allow-check? square]
+   (let [{:keys [color type]} (get-piece state square)
+         valid-moves-fns      {:king   valid-moves-king
+                               :queen  valid-moves-queen
+                               :rook   valid-moves-rook
+                               :bishop valid-moves-bishop
+                               :knight valid-moves-knight
+                               :pawn   valid-moves-pawn
+                               nil     (fn [& _] '())}
+         valid-moves-fn       (get valid-moves-fns type)
+         moves (valid-moves-fn state color square)]
+     (if allow-check?
+       moves
+       (remove (partial move->check? state square) moves)))))
 
 (defn king-position
   "Get rank-file tuple for king of given color's position.
@@ -377,7 +395,7 @@
   [state color]
   (->> all-squares
        (filter (partial enemy? state color))
-       (map (partial valid-moves state))
+       (map (partial valid-moves state true))
        (apply concat)
        (in? (king-position state color))))
 
@@ -393,24 +411,30 @@
   (in? target-square
        (valid-moves state starting-square)))
 
-(defn move
-  "Attempt to move piece at starting square to target square.
-     Returns state unchanged if move is not valid."
+(defn force-move
+  "Moves piece at starting square to target square regardless
+    of whether the move is valid or not."
   {:test (fn []
            (is (= (-> new-game
-                      (move [1 1] [1 2])
+                      (force-move [1 1] [1 2])
                       (get-piece [1 2])
                       (:type))
                   :pawn))
            (is (nil? (-> new-game
-                         (move [1 1] [1 2])
+                         (force-move [1 1] [1 2])
                          (get-piece [1 1])
                          (:type)))))}
   [state starting-square target-square]
+  (as-> (get-piece state starting-square) $
+    (set-piece state $ target-square)
+    (clear-square $ starting-square)))
+
+(defn move
+  "Attempt to move piece at starting square to target square.
+     Returns state unchanged if move is not valid."
+  [state starting-square target-square]
   (if (valid-move? state starting-square target-square)
-    (as-> (get-piece state starting-square) $
-      (set-piece state $ target-square)
-      (clear-square $ starting-square))
+    (force-move state starting-square target-square)
     state))
 
 (defn move->check?
@@ -419,17 +443,15 @@
            (is (-> new-blank-game
                    (set-piece (new-piece :king :white) [0 0])
                    (set-piece (new-piece :bishop :black) [1 2])
-                   (move->check? 0 0 0 1)))
+                   (move->check? [0 0] [0 1])))
            (is (-> new-blank-game
                    (set-piece (new-piece :king :white) [0 0])
                    (set-piece (new-piece :pawn :white) [1 1])
                    (set-piece (new-piece :bishop :black) [3 3])
-                   (move->check? 1 1 1 2))))}
-  ([state starting-file starting-rank [target-file target-rank]]
-   (move->check? state starting-file starting-rank target-file target-rank))
-  ([state starting-file starting-rank target-file target-rank]
-   (-> (move state [starting-file starting-rank] [target-file target-rank])
-       (check? (:player-in-turn state)))))
+                   (move->check? [1 1] [1 2]))))}
+  [state starting-square target-square]
+  (-> (force-move state starting-square target-square)
+      (check? (:player-in-turn state))))
 
 (defn end-turn
   "End turn and set player-in-turn to opposite player."
