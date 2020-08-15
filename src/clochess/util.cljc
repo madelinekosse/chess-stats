@@ -26,8 +26,3 @@
            (is (not (in? 4 [1 2 3]))))}
   [x coll]
   (not (nil? (some #(= % x) coll))))
-
-(defn vec-repeat
-  "Same as clojure.core.repeat but returns a vector instead of a list."
-  [n x]
-  (vec (repeat n x)))

@@ -19,14 +19,17 @@
 (ns clochess.construct
   (:require [clojure.math.combinatorics :refer [permuted-combinations]]
             [clojure.test :refer [is]]
-            [clochess.util :refer [vec-repeat]]))
+            [clochess.util :refer [in?]]))
 
 (defn new-piece
   "Create a piece of given type and color."
   [type color]
-  {:type   type
-   :color  color
-   :moved? false})
+  (if (in? type [:king :rook :pawn])
+    {:type   type
+     :color  color
+     :moved? false}
+    {:type   type
+     :color  color}))
 
 (defn new-back-rank
   "Creates a back rank of given color. Pieces are placed like at the start
@@ -40,6 +43,11 @@
    (new-piece :bishop color)
    (new-piece :knight color)
    (new-piece :rook color)])
+
+(defn- vec-repeat
+  "Same as clojure.core.repeat but returns a vector instead of a list."
+  [n x]
+  (vec (repeat n x)))
 
 (defn pawn-rank
   "Creates a rank filled with pawns of the given color."
@@ -72,13 +80,15 @@
   "Beginning state for a standard chess game."
   {:board          standard-board
    :player-in-turn :white
+   :castling       {:white {:kingside  true
+                            :queenside true}
+                    :black {:kingside  true
+                            :queenside true}}
    :en-passant     nil})
 
 (def new-blank-game
   "Beginning state for a chess game but with no pieces on the board."
-  {:board          blank-board
-   :player-in-turn :white
-   :en-passant     nil})
+  (assoc new-game :board blank-board))
 
 (def all-squares
   "All possible file rank tuples for a chessboard."
@@ -107,6 +117,16 @@
                   (new-piece :knight :white))))}
   [state piece [file rank]]
   (assoc-in state [:board file rank] piece))
+
+(defn set-moved
+  "Mark piece at square as having been moved."
+  {:test (fn []
+           (is (-> new-game
+                   (set-moved [0 0])
+                   (get-piece [0 0])
+                   :moved?)))}
+  [state [file rank]]
+  (update-in state [:board file rank :moved?] (fn [_] true)))
 
 (defn clear-square
   "Clear square of any piece currently occupying it."
