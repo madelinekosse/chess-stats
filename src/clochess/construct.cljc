@@ -18,18 +18,14 @@
 
 (ns clochess.construct
   (:require [clojure.math.combinatorics :refer [permuted-combinations]]
-            [clojure.test :refer [is]]
-            [clochess.util :refer [in?]]))
+            [clojure.test :refer [is]]))
 
 (defn new-piece
   "Create a piece of given type and color."
   [type color]
-  (if (in? type [:king :rook :pawn])
-    {:type   type
-     :color  color
-     :moved? false}
-    {:type   type
-     :color  color}))
+  {:type   type
+   :color  color
+   :moved? false})
 
 (defn new-back-rank
   "Creates a back rank of given color. Pieces are placed like at the start
@@ -78,13 +74,14 @@
 
 (def new-game
   "Beginning state for a standard chess game."
-  {:board          standard-board
-   :player-in-turn :white
-   :castling       {:white {:kingside  true
-                            :queenside true}
-                    :black {:kingside  true
-                            :queenside true}}
-   :en-passant     nil})
+  {:board            standard-board
+   :player-in-turn   :white
+   :castling         {:white {:kingside  true
+                              :queenside true}
+                      :black {:kingside  true
+                              :queenside true}}
+   :en-passant       nil
+   :en-passant-timer 0})
 
 (def new-blank-game
   "Beginning state for a chess game but with no pieces on the board."

@@ -65,7 +65,7 @@
                   (manhattan-distance [4 2] [0 0])
                   6)))}
   [a b]
-  (apply + (map #(Math/abs (+ %1 %2)) a b)))
+  (apply + (map #(Math/abs (- %1 %2)) a b)))
 
 (defn out-of-bounds?
   "True if the given file rank coordinates are outside the chessboard.
@@ -146,20 +146,20 @@
    If that piece is an enemy piece, it is also included in the returning list"
   {:test (fn []
            (is (-> new-game
-                      (remove-blocked :white
-                                      [[4 4] [4 5] [4 6] [4 7] [4 8]]))
+                   (remove-blocked :white
+                                   [[4 4] [4 5] [4 6] [4 7] [4 8]]))
                [[4 4] [4 5] [4 6] [4 7]])
            (is (-> new-game
-                      (remove-blocked :black
-                                      [[4 4] [4 5] [4 6] [4 7] [4 8]]))
+                   (remove-blocked :black
+                                   [[4 4] [4 5] [4 6] [4 7] [4 8]]))
                [[4 4] [4 5] [4 6]])
            (is (-> new-game
-                      (remove-blocked :white
-                                      [[4 4] [4 3] [4 2] [4 1] [4 0]]))
+                   (remove-blocked :white
+                                   [[4 4] [4 3] [4 2] [4 1] [4 0]]))
                [[4 4] [4 3] [4 2]])
            (is (-> new-game
-                      (remove-blocked :black
-                                      [[4 4] [4 3] [4 2] [4 1] [4 0]]))
+                   (remove-blocked :black
+                                   [[4 4] [4 3] [4 2] [4 1] [4 0]]))
                [[4 4] [4 3] [4 2] [4 1]]))}
   [state color squares]
   (let [[free not-free]   (split-with (partial free? state) squares)
@@ -168,13 +168,18 @@
       (conj free square)
       free)))
 
-(declare castle?)
+(def back-rank {:white 0
+                :black 7})
+
+(def pawn-rank {:white 1
+                :black 6})
+
 (defn castle-available?
   "True if neither king, nor castle on given side, of 
    player in turn has moved. Otherwise false."
   [state side]
   (let [player-in-turn (:player-in-turn state)
-        back-rank      (if (= player-in-turn :white) 0 7)
+        back-rank      (player-in-turn back-rank)
         rook-file      (if (= side :queenside) 0 7)
         king           (get-piece state [4 back-rank])
         rook           (get-piece state [rook-file back-rank])]
@@ -182,6 +187,7 @@
                    (:moved? %))
               [king rook])))
 
+(declare castle?)
 (defn valid-moves-king
   "Returns a list of rank-file tuples representing
      valid moves for a king at file and rank"
@@ -213,15 +219,15 @@
                         (set-piece (new-piece :rook :white) [0 0])
                         (valid-moves-king :white [4 0])))))}
   [state color [file rank]]
-  (let [surrounding       [[(dec file) (inc rank)]
-                           [(dec file) rank]
-                           [(dec file) (dec rank)]
-                           [file       (inc rank)]
-                           [file       (dec rank)]
-                           [(inc file) (inc rank)]
-                           [(inc file) rank]
-                           [(inc file) (dec rank)]]
-        back-rank         (if (= (:player-in-turn state) :white) 0 7)]
+  (let [surrounding [[(dec file) (inc rank)]
+                     [(dec file) rank]
+                     [(dec file) (dec rank)]
+                     [file       (inc rank)]
+                     [file       (dec rank)]
+                     [(inc file) (inc rank)]
+                     [(inc file) rank]
+                     [(inc file) (dec rank)]]
+        back-rank    ((:player-in-turn state) back-rank)]
     (as-> surrounding $
       (remove (partial friendly? state color) $)
       (remove out-of-bounds? $)
@@ -270,10 +276,10 @@
                            (valid-moves-bishop :black [4 4])))
                   (set [[3 5] [5 5] [3 3] [2 2] [1 1] [5 3] [6 2] [7 1]]))))}
   [state color [file rank]]
-  (let [nw  (map vector (range (dec file) -1 -1) (range (inc rank) 8))
-        sw  (map vector (range (dec file) -1 -1) (range (dec rank) -1 -1))
-        ne  (map vector (range (inc file) 8) (range (inc rank) 8 ))
-        se  (map vector (range (inc file) 8) (range (dec rank) -1 -1))]
+  (let [nw (map vector (range (dec file) -1 -1) (range (inc rank) 8))
+        sw (map vector (range (dec file) -1 -1) (range (dec rank) -1 -1))
+        ne (map vector (range (inc file) 8) (range (inc rank) 8))
+        se (map vector (range (inc file) 8) (range (dec rank) -1 -1))]
     (->> [nw sw ne se]
          (map (partial remove-blocked state color))
          (apply concat))))
@@ -349,21 +355,27 @@
                            (set-piece (new-piece :pawn :black) [0 5])
                            (set-piece (new-piece :pawn :black) [1 5])
                            (set-piece (new-piece :pawn :black) [2 5])
-                           (valid-moves-pawn :black [1 6])))))}
+                           (valid-moves-pawn :black [1 6]))))
+           (is (= (set (-> new-game
+                           (assoc :en-passant [2 2])
+                           (valid-moves-pawn :white [1 1])))
+                  (set [[1 2] [1 3] [2 2]]))))}
   [state color [file rank]]
-  (let [moved?    (:moved? (get-piece state [file rank]))
-        direction (color {:white 1
-                          :black -1})
-        one-step  [[file (+ rank direction)]]
-        two-steps (if (not moved?)
-                    [[file (+ rank (* direction 2))]]
-                    [])
-        forward   (concat one-step two-steps)
-        diagonals [[(dec file) (+ rank direction)]
-                   [(inc file) (+ rank direction)]]]
+  (let [moved?     (:moved? (get-piece state [file rank]))
+        direction  (color {:white 1
+                           :black -1})
+        one-step   [[file (+ rank direction)]]
+        two-steps  (if (not moved?)
+                     [[file (+ rank (* direction 2))]]
+                     [])
+        forward    (concat one-step two-steps)
+        diagonals  [[(dec file) (+ rank direction)]
+                    [(inc file) (+ rank direction)]]
+        en-passant (:en-passant state)]
     (concat (take-while (partial free? state)
                         forward)
-            (filter (partial enemy? state color) ; TODO: en passant
+            (filter #(or (enemy? state color %)
+                         (= en-passant %))
                     diagonals))))
 
 (declare move->check?)
@@ -461,9 +473,9 @@
                    (valid-move? [1 1] [1 2])))
            (is (not (-> new-game
                         (valid-move? [1 1] [1 4])))))}
-  [state starting-square target-square]
-  (in? target-square
-       (valid-moves state starting-square)))
+  [state square target]
+  (in? target
+       (valid-moves state square)))
 
 (defn castling-move?
   "True if the squares given constitute a castling move for the current
@@ -474,11 +486,11 @@
            (is (-> new-game
                    (assoc :player-in-turn :black)
                    (castling-move? [4 7] [6 7]))))}
-  [state [starting-file starting-rank] [target-file target-rank]]
-  (let [back-rank (if (= (:player-in-turn state) :white) 0 7)]
-    (and (type? state :king [starting-file starting-rank])
-         (= starting-rank target-rank back-rank)
-         (= starting-file 4)
+  [state [file rank] [target-file target-rank]]
+  (let [back-rank ((:player-in-turn state) back-rank)]
+    (and (type? state :king [file rank])
+         (= rank target-rank back-rank)
+         (= file 4)
          (or (= target-file 2)
              (= target-file 6)))))
 
@@ -541,10 +553,10 @@
            (is (not (-> new-game
                         (force-move [0 0] [0 1])
                         (castle-available? :queenside)))))}
-  [state starting-square target-square]
-  (as-> (get-piece state starting-square) $
-    (set-piece state $ target-square)
-    (clear-square $ starting-square)))
+  [state square target]
+  (as-> (get-piece state square) $
+    (set-piece state $ target)
+    (clear-square $ square)))
 
 (defn move
   "Attempt to move piece at starting square to target square.
@@ -554,26 +566,41 @@
                               (set-piece (new-piece :king :white) [4 0])
                               (set-piece (new-piece :rook :white) [0 0])
                               (move [4 0] [2 0])
-                              (get-piece [3 0])))))
-           (is (-> new-blank-game
-                   (set-piece (new-piece :king :white) [4 0])
-                   (set-piece (new-piece :rook :white) [0 0])
-                   (move [4 0] [2 0])
-                   (get-piece [3 0])
-                   :moved?)))}
-  [state starting-square target-square]
-  (let [[target-file target-rank]   target-square
-        rook-starting-file   (get {2 0 6 7} target-file)
-        rook-target-file     (get {2 3 6 5} target-file)
-        rook-starting-square [rook-starting-file target-rank]
-        rook-target-square   [rook-target-file target-rank]]
-    (if (valid-move? state starting-square target-square)
-      (if (castling-move? state starting-square target-square)
-        (-> (force-move state starting-square target-square)
-            (force-move rook-starting-square rook-target-square)
-            (set-moved target-square)
-            (set-moved rook-target-square))
-        (force-move state starting-square target-square))
+                              (get-piece [3 0]))))
+               "Rook should move when king castles.")
+           (is (-> new-game
+                   (move [0 1] [0 3])
+                   (:en-passant))
+               [0 2])
+           (is (-> new-game
+                   (move [0 1] [0 2])
+                   (get-piece [0 2])
+                   :moved?)
+               "Pieces should be flagged as moved."))}
+  [state square target]
+  (let [[target-file target-rank] target
+        rook-file                 (get {2 0 6 7} target-file)
+        rook-square               [rook-file target-rank]
+        rook-target-file          (get {2 3 6 5} target-file)
+        rook-target               [rook-target-file target-rank]
+        pawn?                     (type? state :pawn square)
+        direction                 ((:player-in-turn state) {:white 1
+                                                            :black -1})
+        [file rank]               square
+        distance                  (manhattan-distance square target)
+        en-passant-square         [file (+ rank direction)]]
+    (if (valid-move? state square target)
+      (as-> state $
+        (if (castling-move? $ square target)
+          (-> (force-move $ rook-square rook-target)
+              (set-moved rook-target))
+          $)
+        (if (and pawn? (= distance 2))
+          (-> (assoc $ :en-passant en-passant-square)
+              (assoc :en-passant-timer 2))
+          $)
+        (force-move $ square target)
+        (set-moved $ target))
       state)))
 
 (defn move->check?
@@ -588,8 +615,8 @@
                    (set-piece (new-piece :pawn :white) [1 1])
                    (set-piece (new-piece :bishop :black) [3 3])
                    (move->check? [1 1] [1 2]))))}
-  [state starting-square target-square]
-  (-> (force-move state starting-square target-square)
+  [state square target]
+  (-> (force-move state square target)
       (check? (:player-in-turn state))))
 
 (defn end-turn
@@ -598,6 +625,15 @@
            (is (= (-> new-game
                       (end-turn)
                       (:player-in-turn))
-                  :black)))}
+                  :black))
+           (nil? (-> new-game
+                     (assoc :en-passant [0 3])
+                     (end-turn)
+                     (end-turn)
+                     :en-passant)))}
   [state]
-  (update state :player-in-turn opposite-color))
+  (as-> (update state :player-in-turn opposite-color) $
+    (update $ :en-passant-timer #(max (dec %) 0))
+    (if (= (:en-passant-timer $) 0)
+      (assoc $ :en-passant nil)
+      $)))
