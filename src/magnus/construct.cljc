@@ -17,8 +17,7 @@
 ;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
 (ns magnus.construct
-  (:require [clojure.math.combinatorics :refer [permuted-combinations]]
-            [clojure.test :refer [is]]))
+  (:require [clojure.test :refer [is]]))
 
 (defn new-piece
   "Create a piece of given type and color."
@@ -89,7 +88,8 @@
 
 (def all-squares
   "All possible file rank tuples for a chessboard."
-  (permuted-combinations (concat (range 8) (range 8)) 2))
+  (for [file (range 8) rank (range 8)]
+    [file rank]))
 
 (defn get-piece
   "Get piece at square."
