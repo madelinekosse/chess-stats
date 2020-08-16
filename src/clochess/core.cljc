@@ -567,7 +567,7 @@
                               (set-piece (new-piece :rook :white) [0 0])
                               (move [4 0] [2 0])
                               (get-piece [3 0]))))
-               "Rook should move when king castles.")
+               "Rook should move when king castles")
            (is (-> new-game
                    (move [0 1] [0 3])
                    (:en-passant))
@@ -576,32 +576,49 @@
                    (move [0 1] [0 2])
                    (get-piece [0 2])
                    :moved?)
-               "Pieces should be flagged as moved."))}
-  [state square target]
-  (let [[target-file target-rank] target
-        rook-file                 (get {2 0 6 7} target-file)
-        rook-square               [rook-file target-rank]
-        rook-target-file          (get {2 3 6 5} target-file)
-        rook-target               [rook-target-file target-rank]
-        pawn?                     (type? state :pawn square)
-        direction                 ((:player-in-turn state) {:white 1
-                                                            :black -1})
-        [file rank]               square
-        distance                  (manhattan-distance square target)
-        en-passant-square         [file (+ rank direction)]]
-    (if (valid-move? state square target)
-      (as-> state $
-        (if (castling-move? $ square target)
-          (-> (force-move $ rook-square rook-target)
-              (set-moved rook-target))
-          $)
-        (if (and pawn? (= distance 2))
-          (-> (assoc $ :en-passant en-passant-square)
-              (assoc :en-passant-timer 2))
-          $)
-        (force-move $ square target)
-        (set-moved $ target))
-      state)))
+               "Pieces should be flagged as moved")
+           (is (-> new-blank-game
+                   (set-piece (new-piece :pawn :white) [0 6])
+                   (move [0 6] [0 7] :queen)
+                   (type? :queen [0 7]))
+               "Promotion of pawn"))}
+  ([state square target promotion]
+   (let [player-in-turn     (:player-in-turn state)
+         pawn?              (type? state :pawn square)
+         [_ target-rank]    target
+         opponent-back-rank ((player-in-turn opposite-color) back-rank)]
+     (if (and pawn? (= target-rank opponent-back-rank))
+       (set-piece (move state square target)
+                  (new-piece promotion 
+                             (:player-in-turn state))
+                  target)
+       (move state square target))))
+  ([state square target]
+   (let [[target-file target-rank] target
+         rook-file                 (get {2 0 6 7} target-file)
+         rook-square               [rook-file target-rank]
+         rook-target-file          (get {2 3 6 5} target-file)
+         rook-target               [rook-target-file target-rank]
+         pawn?                     (type? state :pawn square)
+         player-in-turn            (:player-in-turn state)
+         direction                 (player-in-turn {:white 1
+                                                    :black -1})
+         [file rank]               square
+         distance                  (manhattan-distance square target)
+         en-passant-square         [file (+ rank direction)]]
+     (if (valid-move? state square target)
+       (as-> state $
+         (if (castling-move? $ square target)
+           (-> (force-move $ rook-square rook-target)
+               (set-moved rook-target))
+           $)
+         (if (and pawn? (= distance 2))
+           (-> (assoc $ :en-passant en-passant-square)
+               (assoc :en-passant-timer 2))
+           $)
+         (force-move $ square target)
+         (set-moved $ target))
+       state))))
 
 (defn move->check?
   "True if the given move puts current player in check. Otherwise false."
