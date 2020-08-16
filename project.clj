@@ -1,25 +1,56 @@
-;; Magnus - a Clojure chess library
-;; Copyright (C) 2020  Anders Eriksson
+(defproject magnus-demo "0.1.0-SNAPSHOT"
+  :description "FIXME: write description"
+  :url "http://example.com/FIXME"
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
 
-;; This file is part of Magnus.
+  :dependencies [[org.clojure/clojure "1.10.1"]
+                 [org.clojure/clojurescript "1.10.773"]
+                 [reagent "0.10.0"]
+                 [magnus "0.1.0-SNAPSHOT"]]
 
-;; Magnus is free software: you can redistribute it and/or modify
-;; it under the terms of the GNU Lesser General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
+  :plugins [[lein-cljsbuild "1.1.7"]
+            [lein-figwheel "0.5.20"]]
 
-;; Magnus is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU Lesser General Public License for more details.
+  :clean-targets ^{:protect false}
 
-;; You should have received a copy of the GNU Lesser General Public License
-;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
+  [:target-path
+   [:cljsbuild :builds :app :compiler :output-dir]
+   [:cljsbuild :builds :app :compiler :output-to]]
 
-(defproject magnus "0.1.0-SNAPSHOT"
-  :description "A chess library"
-  :url "https://github.com/Anders-E/Chess"
-  :license {:name "LGPL-3.0-or-later"
-            :url "https://www.gnu.org/licenses/lgpl-3.0.html"}
-  :dependencies [[org.clojure/clojure "1.10.1"]]
-  :repl-options {:init-ns magnus.core})
+  :resource-paths ["public"]
+
+  :figwheel {:http-server-root "."
+             :nrepl-port 7002
+             :nrepl-middleware [cider.piggieback/wrap-cljs-repl]
+             :css-dirs ["public/css"]}
+
+  :cljsbuild {:builds {:app
+                       {:source-paths ["src" "env/dev/cljs"]
+                        :compiler
+                        {:main "magnus-demo.dev"
+                         :output-to "public/js/app.js"
+                         :output-dir "public/js/out"
+                         :asset-path   "js/out"
+                         :source-map true
+                         :optimizations :none
+                         :pretty-print  true}
+                        :figwheel
+                        {:on-jsload "magnus-demo.core/mount-root"
+                         :open-urls ["http://localhost:3449/index.html"]}}
+                       :release
+                       {:source-paths ["src" "env/prod/cljs"]
+                        :compiler
+                        {:output-to "public/js/app.js"
+                         :output-dir "target/release"
+                         :optimizations :advanced
+                         :infer-externs true
+                         :pretty-print false}}}}
+
+  :aliases {"package" ["do" "clean" ["cljsbuild" "once" "release"]]}
+
+  :profiles {:dev {:source-paths ["src" "env/dev/clj"]
+                   :dependencies [[binaryage/devtools "1.0.2"]
+                                  [figwheel-sidecar "0.5.20"]
+                                  [nrepl "0.7.0"]
+                                  [cider/piggieback "0.5.0"]]}})
