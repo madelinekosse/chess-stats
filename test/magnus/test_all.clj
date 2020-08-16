@@ -1,33 +1,33 @@
-;; CloChess - a Clojure chess library
+;; Magnus - a Clojure chess library
 ;; Copyright (C) 2020  Anders Eriksson
 
-;; This file is part of CloChess.
+;; This file is part of Magnus.
 
-;; CloChess is free software: you can redistribute it and/or modify
+;; Magnus is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU Lesser General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
 ;; (at your option) any later version.
 
-;; CloChess is distributed in the hope that it will be useful,
+;; Magnus is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU Lesser General Public License for more details.
 
 ;; You should have received a copy of the GNU Lesser General Public License
-;; along with CloChess.  If not, see <https://www.gnu.org/licenses/>.
+;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
-(ns clochess.test-all
+(ns magnus.test-all
   (:require [clojure.test :refer [deftest is run-tests successful?]]
-            [clochess.core]
-            [clochess.construct]
-            [clochess.util]))
+            [magnus.core]
+            [magnus.construct]
+            [magnus.util]))
 
 (deftest test-all
-  ; Bootstrapping with the required namespaces, finds all the clochess.*
+  ; Bootstrapping with the required namespaces, finds all the magnus.*
   ;   namespaces (except this one), requires them, and runs all their tests.
   (let [namespaces (->> (all-ns)
                         (map str)
-                        (filter #(re-matches #"clochess\..*" %))
-                        (remove #(= "clochess.test-all" %))
+                        (filter #(re-matches #"magnus\..*" %))
+                        (remove #(= "magnus.test-all" %))
                         (map symbol))]
     (is (successful? (time (apply run-tests namespaces))))))

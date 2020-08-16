@@ -1,4 +1,4 @@
-# CloChess
+# Magnus
 
 A Clojure chess library.
 
@@ -10,7 +10,7 @@ Download from http://example.com/FIXME.
 
 FIXME: explanation
 
-    $ java -jar clochess-0.1.0-standalone.jar [args]
+    $ java -jar magnus-0.1.0-standalone.jar [args]
 
 ## Options
 

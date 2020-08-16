@@ -1,24 +1,24 @@
-;; CloChess - a Clojure chess library
+;; Magnus - a Clojure chess library
 ;; Copyright (C) 2020  Anders Eriksson
 
-;; This file is part of CloChess.
+;; This file is part of Magnus.
 
-;; CloChess is free software: you can redistribute it and/or modify
+;; Magnus is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU Lesser General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
 ;; (at your option) any later version.
 
-;; CloChess is distributed in the hope that it will be useful,
+;; Magnus is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU Lesser General Public License for more details.
 
 ;; You should have received a copy of the GNU Lesser General Public License
-;; along with CloChess.  If not, see <https://www.gnu.org/licenses/>.
+;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
-(ns clochess.core
+(ns magnus.core
   (:require [clojure.test :refer [is]]
-            [clochess.construct :refer [all-squares
+            [magnus.construct :refer [all-squares
                                         clear-square
                                         get-piece
                                         new-blank-game
@@ -26,7 +26,7 @@
                                         new-piece
                                         set-moved
                                         set-piece]]
-            [clochess.util :refer [in?]]))
+            [magnus.util :refer [in?]]))
 
 (defn file&rank->str
   "Converts rank and file as integers into an algebraic notation string"
