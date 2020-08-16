@@ -1,46 +1,23 @@
 # Magnus
 
+[![Clojars Project](https://img.shields.io/clojars/v/magnus.svg)](https://clojars.org/magnus)
+
 A Clojure chess library.
 
 ## Installation
 
-Download from http://example.com/FIXME.
+Using Leiningen, add Magnus to your dependencies in project.clj:
+
+[![Clojars Project](http://clojars.org/magnus/latest-version.svg)](http://clojars.org/magnus)
 
 ## Usage
 
-FIXME: explanation
-
-    $ java -jar magnus-0.1.0-standalone.jar [args]
-
-## Options
-
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
+***TODO***
 
 ## License
 
 Copyright © 2020 Anders Eriksson
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Magnus is released under the GNU Lesser General Public License v3 as published by the Free Software Foundation.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+For more information please see files `COPYING` and `COPYING.LESSER`.
