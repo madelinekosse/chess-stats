@@ -1,8 +1,9 @@
 body {
   font-family: 'Helvetica Neue', Verdana, Helvetica, Arial, sans-serif;
-  max-width: 600px;
+  max-width: 640px;
   margin: 0 auto;
   padding-top: 72px;
+  padding-bottom: 72px;
   -webkit-font-smoothing: antialiased;
   font-size: 1.125em;
   color: #333;
@@ -12,6 +13,7 @@ body {
 h1, h2, h3 {
   color: #000;
 }
+
 h1 {
   font-size: 2.5em
 }
@@ -31,4 +33,54 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+.board {
+  width: 640px;
+  height: 640px;
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(8, 80px);
+  grid-template-rows: repeat(8, 80px);
+  grid-auto-flow: row;
+  border: 6px solid;
+  border-color: #000;
+}
+
+.square-dark {
+  width: 80px;
+  height: 80px;
+  float: left;
+  text-align: center;
+  background-color: #777;
+}
+
+.square-light {
+  width: 80px;
+  height: 80px;
+  float: left;
+  text-align: center;
+  background-color: #eee;
+}
+
+.square-highlighted {
+  width: 80px;
+  height: 80px;
+  float: left;
+  text-align: center;
+  background-color: #79fa5f;
+  border: 1px solid #000;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+
+.piece-icon {
+  width: 80%;
+  height: 80%;
+}
+
+.piece-icon:hover {
+  width: 90%;
+  height: 90%;
 }
