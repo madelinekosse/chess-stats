@@ -16,9 +16,10 @@
 ;; You should have received a copy of the GNU Lesser General Public License
 ;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
-(ns magnus.debug)
+(ns magnus.debug
+  "Useful functions for REPL or print debugging.")
 
-(def color&type->unicode {:white {:king   "♚"
+(def color&type->unicode {:white {:king  "♚"
                                  :queen  "♛"
                                  :rook   "♜"
                                  :bishop "♝"

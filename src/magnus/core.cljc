@@ -17,6 +17,7 @@
 ;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
 (ns magnus.core
+  "Core functionality for playing Chess."
   (:require [clojure.test :refer [is]]
             [magnus.construct :refer [all-squares
                                         clear-square
@@ -28,35 +29,7 @@
                                         set-piece]]
             [magnus.util :refer [in?]]))
 
-(defn file&rank->str
-  "Converts rank and file as integers into an algebraic notation string"
-  {:test (fn []
-           (is (= (file&rank->str [0 0])
-                  "a1"))
-           (is (= (file&rank->str [7 7])
-                  "h8"))
-           (is (= (file&rank->str [3 4])
-                  "d5")))}
-  [[file rank]]
-  (str (char (+ 97 file)) (inc rank)))
-
-(defn str->file&rank
-  "Converts a string representing a square in algebraic
-   notation into an integer tuple."
-  {:test (fn []
-           (is (= (str->file&rank "a1")
-                  [0 0]))
-           (is (= (str->file&rank "h8")
-                  [7 7]))
-           (is (= (str->file&rank "d5")
-                  [3 4])))}
-  [s]
-  (let [file (int (first s))
-        rank (int (second s))]
-    [(- file 97)
-     (- rank 49)]))
-
-(defn- manhattan-distance
+(defn manhattan-distance
   "Manhattan distance between two squares."
   {:test (fn []
            (is (= (manhattan-distance [0 0] [0 0])
@@ -105,6 +78,7 @@
       (= color)))
 
 (def opposite-color
+  "Maps color to opposite color."
   {:white :black
    :black :white})
 
@@ -168,11 +142,15 @@
       (conj free square)
       free)))
 
-(def back-rank {:white 0
-                :black 7})
+(def back-rank
+  "Maps color to back rank index."
+  {:white 0
+   :black 7})
 
-(def pawn-rank {:white 1
-                :black 6})
+(def pawn-rank
+  "Maps color to pawn rank index."
+  {:white 1
+   :black 6})
 
 (defn castle-available?
   "True if neither king, nor castle on given side, of 
@@ -190,7 +168,7 @@
 (declare castle?)
 (defn valid-moves-king
   "Returns a list of rank-file tuples representing
-     valid moves for a king at file and rank"
+   valid moves for a king at file and rank"
   {:test (fn []
            (is (-> new-game
                    (valid-moves-king :white [4 4])
@@ -228,8 +206,7 @@
                      [(inc file) rank]
                      [(inc file) (dec rank)]]
         back-rank    ((:player-in-turn state) back-rank)]
-    (as-> surrounding $
-      (remove (partial friendly? state color) $)
+    (as-> (remove (partial friendly? state color) surrounding) $
       (remove out-of-bounds? $)
       (if (castle? state :queenside)
         (conj $ [2 back-rank])
@@ -240,7 +217,7 @@
 
 (defn valid-moves-rook
   "Returns a list of rank-file tuples representing
-     valid moves for a rook at file and rank"
+   valid moves for a rook at file and rank"
   {:test (fn []
            (is (-> new-game
                    (valid-moves-rook :white [0 0])
@@ -264,7 +241,7 @@
 
 (defn valid-moves-bishop
   "Returns a list of rank-file tuples representing
-     valid moves for a bishop at file and rank"
+   valid moves for a bishop at file and rank"
   {:test (fn []
            (is (-> new-game
                    (valid-moves-bishop :white [2 0])
@@ -286,7 +263,7 @@
 
 (defn valid-moves-queen
   "Returns a list of rank-file tuples representing
-     valid moves for a queen at file and rank"
+   valid moves for a queen at file and rank"
   {:test (fn []
            (is (-> new-game
                    (valid-moves-queen :white [0 0])
@@ -304,7 +281,7 @@
 
 (defn valid-moves-knight
   "Returns a list of rank-file tuples representing
-     valid moves for a knight at file and rank"
+   valid moves for a knight at file and rank"
   {:test (fn []
            (is (= (-> new-game
                       (valid-moves-knight :white [0 0]))
@@ -335,7 +312,7 @@
 
 (defn valid-moves-pawn
   "Returns a list of rank-file tuples representing
-     valid moves for a pawn at file and rank"
+   valid moves for a pawn at file and rank"
   {:test (fn []
            (is (= (set (-> new-game
                            (valid-moves-pawn :white [1 1])))
@@ -381,9 +358,9 @@
 (declare move->check?)
 (defn valid-moves
   "Returns a list of rank-file tuples representing
-     valid moves for the piece at file and rank.
-     If allow-check is false (default), the player may not
-     place own king in check."
+   valid moves for the piece at file and rank.
+   If allow-check is false (default), the player may not
+   place own king in check."
   {:test (fn []
            (is (empty? (-> new-game
                            (valid-moves [3 3]))))
@@ -416,7 +393,7 @@
 
 (defn under-attack?
   "True if square is under attack by player currently NOT in turn.
-     Otherwise false."
+   Otherwise false."
   {:test (fn []
            (is (-> new-game
                    (under-attack? [0 5])))
@@ -431,7 +408,7 @@
 
 (defn king-position
   "Get rank-file tuple for king of given color's position.
-     Returns nil if no king of given color is found."
+   Returns nil if no king of given color is found."
   {:test (fn []
            (is (= (-> new-game
                       (king-position :white))
@@ -538,8 +515,8 @@
 
 (defn force-move
   "Moves piece at starting square to target square regardless
-    of whether the move is valid or not.
-    Does not mark piece as moved where regular `move` would."
+   of whether the move is valid or not.
+   Does not mark piece as moved where regular `move` would."
   {:test (fn []
            (is (= (-> new-game
                       (force-move [1 1] [1 2])
@@ -560,7 +537,7 @@
 
 (defn move
   "Attempt to move piece at starting square to target square.
-     Returns state unchanged if move is not valid."
+   Returns state unchanged if move is not valid."
   {:test (fn []
            (is (not (nil? (-> new-blank-game
                               (set-piece (new-piece :king :white) [4 0])
@@ -654,3 +631,12 @@
     (if (= (:en-passant-timer $) 0)
       (assoc $ :en-passant nil)
       $)))
+
+(defn move->end-turn
+  "Combination of magnus.core/move and magnus.core/end-turn."
+  ([state square target promotion]
+   (-> (move state square target promotion)
+       (end-turn)))
+  ([state square target]
+   (-> (move state square target)
+       (end-turn))))

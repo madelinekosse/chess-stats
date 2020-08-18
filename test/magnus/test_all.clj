@@ -20,6 +20,7 @@
   (:require [clojure.test :refer [deftest is run-tests successful?]]
             [magnus.core]
             [magnus.construct]
+            [magnus.notation]
             [magnus.util]))
 
 (deftest test-all

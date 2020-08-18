@@ -17,6 +17,7 @@
 ;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
 (ns magnus.construct
+  "Functions related to creating and modifying data structures used in Magnus."
   (:require [clojure.test :refer [is]]))
 
 (defn new-piece

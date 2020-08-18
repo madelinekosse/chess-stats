@@ -16,15 +16,36 @@
 ;; You should have received a copy of the GNU Lesser General Public License
 ;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
-(ns magnus.util
-  "Utility functions for Magnus. Probably not of interest unless you're
-   modifying the library itself."
-  (:require [clojure.test :refer [is]]))
+(ns magnus.api
+  "Public API for Magnus.
+   Should be sufficient for most general chess programming"
+  (:require [potemkin :refer [import-vars]]
+            magnus.core
+            magnus.construct
+            magnus.notation))
 
-(defn in?
-  "Check if value is in collection."
-  {:test (fn []
-           (is (in? 1 [1 2 3]))
-           (is (not (in? 4 [1 2 3]))))}
-  [x coll]
-  (not (nil? (some #(= % x) coll))))
+(import-vars
+ [magnus.core
+  
+  castle-available?
+  valid-moves
+  check?
+  move
+  move->end-turn]
+ 
+ [magnus.construct
+  
+  new-piece
+  blank-board
+  standard-board
+  new-game
+  new-blank-game
+  get-piece
+  set-piece
+  clear-square
+  get-player-in-turn]
+ 
+ [magnus.notation
+
+  file&rank->str
+  str->file&rank])
