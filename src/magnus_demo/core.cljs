@@ -1,14 +1,13 @@
 (ns magnus-demo.core
   (:require [reagent.core :as r]
             [reagent.dom :as d]
-            [magnus.core :as m.core]
-            [magnus.construct :as m.con]
+            [magnus.api :as m]
             [magnus.util :refer [in?]]))
 
 ;; -------------------------
 ;; Atoms
 
-(def game-state (r/atom m.con/new-game))
+(def game-state (r/atom m/new-game))
 (def valid-moves (r/atom '()))
 (def selected-square (r/atom nil))
 
@@ -44,19 +43,22 @@
 ;; On-clicks
 
 (defn move-piece [square]
-  (swap! game-state m.core/move @selected-square square)
-  (swap! game-state m.core/end-turn)
+  (swap! game-state m/move @selected-square square)
+  (swap! game-state m/end-turn)
   (reset! selected-square nil)
   (reset! valid-moves '()))
 
 (defn select-piece [square]
-  (reset! valid-moves (m.core/valid-moves @game-state square))
+  (reset! valid-moves (m/valid-moves @game-state square))
   (reset! selected-square square))
 
 (defn board-square-on-click [square]
   (if (in? square @valid-moves)
     (move-piece square)
     (select-piece square)))
+
+(defn reset-game []
+  (reset! game-state m/new-game))
 
 ;; -------------------------
 ;; Components
@@ -69,7 +71,7 @@
 (defn board-square [square]
   [:div.square {:class    (square-style square)
                 :on-click #(board-square-on-click square)}
-   [piece-icon (m.con/get-piece @game-state square)]])
+   [piece-icon (m/get-piece @game-state square)]])
 
 (defn board []
   [:div.board
@@ -77,9 +79,9 @@
      ^{:key [file rank]} [board-square [file rank]])])
 
 (defn reset-button []
-  [:input {:type "button"
-           :value "Reset board"
-           :on-click #(reset! game-state m.con/new-game)}])
+  [:input {:type     "button"
+           :value    "Reset board"
+           :on-click reset-game}])
 
 (defn home-page []
   [:div [:h2 "Magnus - Demo"]
