@@ -154,10 +154,9 @@
 
 (defn castle-available?
   "True if neither king, nor castle on given side, of 
-   player in turn has moved. Otherwise false."
-  [state side]
-  (let [player-in-turn (:player-in-turn state)
-        back-rank      (player-in-turn back-rank)
+   color has moved. Otherwise false."
+  [state color side]
+  (let [back-rank      (color back-rank)
         rook-file      (if (= side :queenside) 0 7)
         king           (get-piece state [4 back-rank])
         rook           (get-piece state [rook-file back-rank])]
@@ -205,13 +204,13 @@
                      [(inc file) (inc rank)]
                      [(inc file) rank]
                      [(inc file) (dec rank)]]
-        back-rank    ((:player-in-turn state) back-rank)]
+        back-rank    (color back-rank)]
     (as-> (remove (partial friendly? state color) surrounding) $
       (remove out-of-bounds? $)
-      (if (castle? state :queenside)
+      (if (castle? state color :queenside)
         (conj $ [2 back-rank])
         $)
-      (if (castle? state :kingside)
+      (if (castle? state color :kingside)
         (conj $ [6 back-rank])
         $))))
 
@@ -263,7 +262,7 @@
 
 (defn valid-moves-queen
   "Returns a list of rank-file tuples representing
-   valid moves for a queen at file and rank"
+   valid moves for a queen at square"
   {:test (fn []
            (is (-> new-game
                    (valid-moves-queen :white [0 0])
@@ -358,7 +357,7 @@
 (declare move->check?)
 (defn valid-moves
   "Returns a list of rank-file tuples representing
-   valid moves for the piece at file and rank.
+   valid moves for the piece at square.
    If allow-check is false (default), the player may not
    place own king in check."
   {:test (fn []
@@ -389,19 +388,18 @@
          moves (valid-moves-fn state color square)]
      (if allow-check?
        moves
-       (remove (partial move->check? state square) moves)))))
+       (remove (partial move->check? state color square) moves)))))
 
 (defn under-attack?
-  "True if square is under attack by player currently NOT in turn.
-   Otherwise false."
+  "True if square is under attack by color. Otherwise false."
   {:test (fn []
            (is (-> new-game
-                   (under-attack? [0 5])))
+                   (under-attack? :black [0 5])))
            (is (not (-> new-game
-                        (under-attack? [0 0])))))}
-  [state square]
+                        (under-attack? :black [0 0])))))}
+  [state color square]
   (->> all-squares
-       (filter (partial enemy? state (:player-in-turn state)))
+       (filter (partial friendly? state color))
        (map (partial valid-moves state true))
        (apply concat)
        (in? square)))
@@ -440,7 +438,9 @@
                         (set-piece (new-piece :bishop :black) [5 5])
                         (check? :white)))))}
   [state color]
-  (under-attack? state (king-position state color)))
+  (let [opposite-color (color opposite-color)
+        king-position  (king-position state color)]
+    (under-attack? state opposite-color king-position)))
 
 (defn valid-move?
   "True if a move from the starting square to the target square is valid.
@@ -455,16 +455,15 @@
        (valid-moves state square)))
 
 (defn castling-move?
-  "True if the squares given constitute a castling move for the current
-   player in turn. Otherwise false."
+  "True if the squares given constitute a castling move for color.
+   Otherwise false."
   {:test (fn []
            (is (-> new-game
-                   (castling-move? [4 0] [2 0])))
+                   (castling-move? :white [4 0] [2 0])))
            (is (-> new-game
-                   (assoc :player-in-turn :black)
-                   (castling-move? [4 7] [6 7]))))}
-  [state [file rank] [target-file target-rank]]
-  (let [back-rank ((:player-in-turn state) back-rank)]
+                   (castling-move? :black [4 7] [6 7]))))}
+  [state color [file rank] [target-file target-rank]]
+  (let [back-rank (color back-rank)]
     (and (type? state :king [file rank])
          (= rank target-rank back-rank)
          (= file 4)
@@ -472,46 +471,47 @@
              (= target-file 6)))))
 
 (defn castle?
-  "True if player in turn can castle on the given side. Otherwise false."
+  "True if color can castle on the given side. Otherwise false."
   {:test (fn []
            (is (-> new-blank-game
                    (set-piece (new-piece :king :white) [4 0])
                    (set-piece (new-piece :rook :white) [0 0])
-                   (castle? :queenside)))
+                   (castle? :white :queenside)))
            (is (not (-> new-blank-game
                         (set-piece (assoc (new-piece :king :white)
                                           :moved?
                                           true)
                                    [4 0])
                         (set-piece (new-piece :rook :white) [0 0])
-                        (castle? :queenside)))
+                        (castle? :white :queenside)))
                "Cannot castle if availability is false
                 (either piece has previously been moved)")
            (is (not (-> new-game
-                        (castle? :queenside)))
+                        (castle? :white :queenside)))
                "Cannot castle with pieces between king and rook")
            (is (not (-> new-blank-game
                         (set-piece (new-piece :king :white) [4 0])
                         (set-piece (new-piece :rook :white) [0 0])
                         (set-piece (new-piece :rook :black) [4 7])
-                        (castle? :queenside)))
+                        (castle? :white :queenside)))
                "Cannot castle if king in check")
            (is (not (-> new-blank-game
                         (set-piece (new-piece :king :white) [4 0])
                         (set-piece (new-piece :rook :white) [0 0])
                         (set-piece (new-piece :rook :black) [2 7])
-                        (castle? :queenside)))
+                        (castle? :white :queenside)))
                "Cannot castle if king must not pass through a
-                square that is underattack by enemy pieces"))}
-  [state side]
-  (let [rank    (if (= (:player-in-turn state) :white) 0 7)
-        squares (if (= side :queenside)
-                  [[1 rank] [2 rank] [3 rank]]
-                  [[5 rank] [6 rank]])]
-    (and (castle-available? state side)
+                square that is under attack by an enemy piece"))}
+  [state color side]
+  (let [rank           (color back-rank)
+        opposite-color (color opposite-color)
+        squares        (if (= side :queenside)
+                         [[1 rank] [2 rank] [3 rank]]
+                         [[5 rank] [6 rank]])]
+    (and (castle-available? state color side)
          (every? (partial free? state) squares)
-         (not (check? state (:player-in-turn state)))
-         (not-any? (partial under-attack? state) squares))))
+         (not (check? state color))
+         (not-any? (partial under-attack? state opposite-color) squares))))
 
 (defn force-move
   "Moves piece at starting square to target square regardless
@@ -529,7 +529,7 @@
                          (:type))))
            (is (not (-> new-game
                         (force-move [0 0] [0 1])
-                        (castle-available? :queenside)))))}
+                        (castle-available? :white :queenside)))))}
   [state square target]
   (as-> (get-piece state square) $
     (set-piece state $ target)
@@ -560,32 +560,32 @@
                    (type? :queen [0 7]))
                "Promotion of pawn"))}
   ([state square target promotion]
-   (let [player-in-turn     (:player-in-turn state)
-         pawn?              (type? state :pawn square)
-         [_ target-rank]    target
-         opponent-back-rank ((player-in-turn opposite-color) back-rank)]
+   (let [{:keys [color type]} (get-piece state square)
+         pawn?                (= type :pawn)
+         [_ target-rank]      target
+         opponent-back-rank  ((color opposite-color) back-rank)]
      (if (and pawn? (= target-rank opponent-back-rank))
        (set-piece (move state square target)
                   (new-piece promotion 
-                             (:player-in-turn state))
+                             color)
                   target)
        (move state square target))))
   ([state square target]
-   (let [[target-file target-rank] target
+   (let [{:keys [color type]}      (get-piece state square)
+         [target-file target-rank] target
          rook-file                 (get {2 0 6 7} target-file)
          rook-square               [rook-file target-rank]
          rook-target-file          (get {2 3 6 5} target-file)
          rook-target               [rook-target-file target-rank]
-         pawn?                     (type? state :pawn square)
-         player-in-turn            (:player-in-turn state)
-         direction                 (player-in-turn {:white 1
-                                                    :black -1})
+         pawn?                     (= type :pawn)
+         direction                 (color {:white 1
+                                           :black -1})
          [file rank]               square
          distance                  (manhattan-distance square target)
          en-passant-square         [file (+ rank direction)]]
      (if (valid-move? state square target)
        (as-> state $
-         (if (castling-move? $ square target)
+         (if (castling-move? $ color square target)
            (-> (force-move $ rook-square rook-target)
                (set-moved rook-target))
            $)
@@ -598,20 +598,20 @@
        state))))
 
 (defn move->check?
-  "True if the given move puts current player in check. Otherwise false."
+  "True if the given move puts color in check. Otherwise false."
   {:test (fn []
            (is (-> new-blank-game
                    (set-piece (new-piece :king :white) [0 0])
                    (set-piece (new-piece :bishop :black) [1 2])
-                   (move->check? [0 0] [0 1])))
+                   (move->check? :white [0 0] [0 1])))
            (is (-> new-blank-game
                    (set-piece (new-piece :king :white) [0 0])
                    (set-piece (new-piece :pawn :white) [1 1])
                    (set-piece (new-piece :bishop :black) [3 3])
-                   (move->check? [1 1] [1 2]))))}
-  [state square target]
+                   (move->check? :white [1 1] [1 2]))))}
+  [state color square target]
   (-> (force-move state square target)
-      (check? (:player-in-turn state))))
+      (check? color)))
 
 (defn end-turn
   "End turn and set player-in-turn to opposite player."
