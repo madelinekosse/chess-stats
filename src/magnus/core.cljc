@@ -30,7 +30,7 @@
                                       set-piece]]
             [magnus.util :refer [in?]]))
 
-(defn manhattan-distance
+(defn- manhattan-distance
   "Manhattan distance between two squares."
   {:test (fn []
            (is (= (manhattan-distance [0 0] [0 0])
@@ -41,7 +41,7 @@
   [a b]
   (apply + (map #(Math/abs (- %1 %2)) a b)))
 
-(defn out-of-bounds?
+(defn- out-of-bounds?
   "True if the given file rank coordinates are outside the chessboard.
    Otherwise false."
   {:test (fn []
@@ -51,7 +51,7 @@
   (not (and (<= 0 file 7)
             (<= 0 rank 7))))
 
-(defn free?
+(defn- free?
   "True if the given square is not occupied by a piece. Otherwise false."
   {:test (fn []
            (is (and (-> new-game
@@ -61,7 +61,7 @@
   [state square]
   (nil? (get-piece state square)))
 
-(defn friendly?
+(defn- friendly?
   "True if piece at the given square is of the given color.
    Otherwise false."
   {:test (fn []
@@ -78,12 +78,12 @@
       (:color)
       (= color)))
 
-(def opposite-color
+(def ^:private opposite-color
   "Maps color to opposite color."
   {:white :black
    :black :white})
 
-(defn enemy?
+(defn- enemy?
   "True if piece at the given square is of the color
    opposite to the one given.Otherwise false."
   {:test (fn []
@@ -102,7 +102,7 @@
       (:color)
       (= (color opposite-color))))
 
-(defn type?
+(defn- type?
   "True if piece at the given square is of the given type. Otherwise false."
   {:test (fn []
            (is (-> new-game
@@ -114,7 +114,7 @@
       (:type)
       (= type)))
 
-(defn remove-blocked
+(defn- remove-blocked
   "Takes a list of rank file tuples representing a line of valid moves for a
    bishop, rook, or queen, and cuts it off at the first square with a blocking
    piece.
@@ -143,15 +143,10 @@
       (conj free square)
       free)))
 
-(def back-rank
+(def ^:private back-rank
   "Maps color to back rank index."
   {:white 0
    :black 7})
-
-(def pawn-rank
-  "Maps color to pawn rank index."
-  {:white 1
-   :black 6})
 
 (defn castle-available?
   "True if neither king, nor castle on given side, of 
@@ -166,7 +161,7 @@
               [king rook])))
 
 (declare castle?)
-(defn valid-moves-castling
+(defn- valid-moves-castling
   "Returns a list of rank-file tuples representing
    valid castling moves for a king of given color."
   {:test (fn []
@@ -183,7 +178,7 @@
                     [[6 back-rank]])]
     (concat queenside kingside)))
 
-(defn valid-moves-king
+(defn- valid-moves-king
   "Returns a list of rank-file tuples representing
    valid moves for a king at file and rank"
   {:test (fn []
@@ -225,7 +220,7 @@
         (concat $ (valid-moves-castling state color))
         $))))
 
-(defn valid-moves-rook
+(defn- valid-moves-rook
   "Returns a list of rank-file tuples representing
    valid moves for a rook at file and rank"
   {:test (fn []
@@ -249,7 +244,7 @@
          (map (partial remove-blocked state color))
          (apply concat))))
 
-(defn valid-moves-bishop
+(defn- valid-moves-bishop
   "Returns a list of rank-file tuples representing
    valid moves for a bishop at file and rank"
   {:test (fn []
@@ -271,7 +266,7 @@
          (map (partial remove-blocked state color))
          (apply concat))))
 
-(defn valid-moves-queen
+(defn- valid-moves-queen
   "Returns a list of rank-file tuples representing
    valid moves for a queen at square"
   {:test (fn []
@@ -289,7 +284,7 @@
   (concat (valid-moves-rook state color square)
           (valid-moves-bishop state color square)))
 
-(defn valid-moves-knight
+(defn- valid-moves-knight
   "Returns a list of rank-file tuples representing
    valid moves for a knight at file and rank"
   {:test (fn []
@@ -320,7 +315,7 @@
          (remove (partial friendly? state color))
          (remove out-of-bounds?))))
 
-(defn valid-moves-pawn
+(defn- valid-moves-pawn
   "Returns a list of rank-file tuples representing
    valid moves for a pawn at file and rank"
   {:test (fn []
@@ -401,7 +396,7 @@
       (remove (partial move->check? state color square) moves)
       moves)))
 
-(defn under-attack?
+(defn- under-attack?
   "True if square is under attack by color. Otherwise false."
   {:test (fn []
            (is (-> new-game
@@ -415,7 +410,7 @@
        (apply concat)
        (in? square)))
 
-(defn king-position
+(defn- king-position
   "Get rank-file tuple for king of given color's position.
    Returns nil if no king of given color is found."
   {:test (fn []
@@ -453,7 +448,7 @@
         king-position  (king-position state color)]
     (under-attack? state opposite-color king-position)))
 
-(defn valid-move?
+(defn- valid-move?
   "True if a move from the starting square to the target square is valid.
    Otherwise false."
   {:test (fn []
@@ -465,7 +460,7 @@
   (in? target
        (valid-moves state square)))
 
-(defn castling-move?
+(defn- castling-move?
   "True if the squares given constitute a castling move for color.
    Otherwise false."
   {:test (fn []
@@ -481,7 +476,7 @@
          (or (= target-file 2)
              (= target-file 6)))))
 
-(defn castle?
+(defn- castle?
   "True if color can castle on the given side. Otherwise false."
   {:test (fn []
            (is (-> new-blank-game
@@ -524,7 +519,7 @@
          (not (check? state color))
          (not-any? (partial under-attack? state opposite-color) squares))))
 
-(defn force-move
+(defn- force-move
   "Moves piece at starting square to target square regardless
    of whether the move is valid or not.
    Does not mark piece as moved where regular `move` would."
@@ -608,7 +603,7 @@
          (set-moved $ target))
        state))))
 
-(defn move->check?
+(defn- move->check?
   "True if the given move puts color in check. Otherwise false."
   {:test (fn []
            (is (-> new-blank-game

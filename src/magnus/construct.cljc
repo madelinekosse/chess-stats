@@ -18,7 +18,8 @@
 
 (ns magnus.construct
   "Functions related to creating and modifying data structures used in Magnus."
-  (:require [clojure.test :refer [is]]))
+  (:require [clojure.test :refer [is]]
+            [magnus.util :refer [vec-repeat]]))
 
 (defn new-piece
   "Create a piece of given type and color."
@@ -27,7 +28,7 @@
    :color  color
    :moved? false})
 
-(defn new-back-rank
+(defn- new-back-rank
   "Creates a back rank of given color. Pieces are placed like at the start
    of a standard chess game."
   [color]
@@ -40,28 +41,23 @@
    (new-piece color :knight)
    (new-piece color :rook)])
 
-(defn- vec-repeat
-  "Same as clojure.core.repeat but returns a vector instead of a list."
-  [n x]
-  (vec (repeat n x)))
-
-(defn pawn-rank
+(defn- pawn-rank
   "Creates a rank filled with pawns of the given color."
   {:test (fn []
            (is (every? #{(new-piece :white :pawn)} (pawn-rank :white))))}
   [color]
   (vec-repeat 8 (new-piece color :pawn)))
 
-(def blank-rank
+(def ^:private blank-rank
   "A rank with no pieces on it."
   (vec-repeat 8 nil))
 
-(def blank-board
+(def ^:private blank-board
   "A board with no pieces on it."
   (vec-repeat 8 (vec-repeat 8 nil)))
 
 
-(def standard-board
+(def ^:private standard-board
   "A board with the initial position of standard chess."
   (apply mapv vector [(new-back-rank :white)
                       (pawn-rank :white)

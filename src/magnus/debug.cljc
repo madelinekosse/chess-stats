@@ -19,7 +19,7 @@
 (ns magnus.debug
   "Useful functions for REPL or print debugging.")
 
-(def color&type->unicode {:white {:king  "♚"
+(def ^:private color&type->unicode {:white {:king  "♚"
                                  :queen  "♛"
                                  :rook   "♜"
                                  :bishop "♝"
@@ -32,8 +32,9 @@
                                  :knight "♘"
                                  :pawn   "♙"}})
 
-(defn piece->unicode
-  "Convert piece into unicode symbol."
+(defn- piece->unicode
+  "Convert piece into unicode symbol. Returns a single 
+   whitespace if not a recognized piece."
   [piece]
   (let [type (:type piece)
         color (:color piece)]
