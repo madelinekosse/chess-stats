@@ -33,12 +33,13 @@
                                  :pawn   "♙"}})
 
 (defn piece->unicode
+  "Convert piece into unicode symbol."
   [piece]
   (let [type (:type piece)
         color (:color piece)]
     (or (get-in color&type->unicode [color type]) " ")))
 
-(defn rank->str
+(defn- rank->str
   [i rank]
   (let [index (- 8 i)]
     (str index
@@ -47,6 +48,7 @@
          "|")))
 
 (defn board->str
+  "Convert board to an easily readable unicode grid."
   [board]
   (let [board     (reverse (apply mapv vector board))
         frame-top "  ┌─┬─┬─┬─┬─┬─┬─┬─┐\n"
@@ -60,5 +62,6 @@
          letters)))
 
 (defn print-board
+  "Print the board of state in a unicode grid."
   [state]
   (println (board->str (:board state))))
