@@ -122,6 +122,11 @@
   [state [file rank]]
   (update-in state [:board file rank :moved?] (fn [_] true)))
 
+(defn set-result
+  "Sets result of a game."
+  [state result]
+  (assoc state :result result))
+
 (defn clear-square
   "Clear square of any piece currently occupying it."
   {:test (fn []

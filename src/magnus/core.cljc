@@ -27,7 +27,8 @@
                                       new-game
                                       new-piece
                                       set-moved
-                                      set-piece]]
+                                      set-piece
+                                      set-result]]
             [magnus.util :refer [in?]]))
 
 (defn- manhattan-distance
@@ -519,50 +520,27 @@
          (not (check? state color))
          (not-any? (partial under-attack? state opposite-color) squares))))
 
-(defn- force-move
-  "Moves piece at starting square to target square regardless
-   of whether the move is valid or not.
-   Does not mark piece as moved where regular `move` would."
-  {:test (fn []
-           (is (= (-> new-game
-                      (force-move [1 1] [1 2])
-                      (get-piece [1 2])
-                      (:type))
-                  :pawn))
-           (is (nil? (-> new-game
-                         (force-move [1 1] [1 2])
-                         (get-piece [1 1])
-                         (:type))))
-           (is (not (-> new-game
-                        (force-move [0 0] [0 1])
-                        (castle-available? :white :queenside)))))}
-  [state square target]
-  (as-> (get-piece state square) $
-    (set-piece state $ target)
-    (clear-square $ square)))
-
-(defn move
-  "Attempt to move piece at starting square to target square.
-   Returns state unchanged if move is not valid."
+(defn- move-piece
+  "Moves piece piece at starting square to target square."
   {:test (fn []
            (is (not (nil? (-> new-blank-game
                               (set-piece (new-piece :white :king) [4 0])
                               (set-piece (new-piece :white :rook) [0 0])
-                              (move [4 0] [2 0])
+                              (move-piece [4 0] [2 0])
                               (get-piece [3 0]))))
                "Rook should move when king castles")
            (is (-> new-game
-                   (move [0 1] [0 3])
+                   (move-piece [0 1] [0 3])
                    (:en-passant))
                [0 2])
            (is (-> new-game
-                   (move [0 1] [0 2])
+                   (move-piece [0 1] [0 2])
                    (get-piece [0 2])
                    :moved?)
                "Pieces should be flagged as moved")
            (is (-> new-blank-game
                    (set-piece (new-piece :white :pawn) [0 6])
-                   (move [0 6] [0 7] :queen)
+                   (move-piece [0 6] [0 7] :queen)
                    (type? :queen [0 7]))
                "Promotion of pawn"))}
   ([state square target promotion]
@@ -571,11 +549,11 @@
          [_ target-rank]      target
          opponent-back-rank  ((color opposite-color) back-rank)]
      (if (and pawn? (= target-rank opponent-back-rank))
-       (set-piece (move state square target)
+       (set-piece (move-piece state square target)
                   (new-piece color
                              promotion)
                   target)
-       (move state square target))))
+       (move-piece state square target))))
   ([state square target]
    (let [{:keys [color type]}      (get-piece state square)
          [target-file target-rank] target
@@ -589,19 +567,19 @@
          [file rank]               square
          distance                  (manhattan-distance square target)
          en-passant-square         [file (+ rank direction)]]
-     (if (valid-move? state square target)
-       (as-> state $
-         (if (castling-move? $ color square target)
-           (-> (force-move $ rook-square rook-target)
-               (set-moved rook-target))
-           $)
-         (if (and pawn? (= distance 2))
-           (-> (assoc $ :en-passant en-passant-square)
-               (assoc :en-passant-timer 2))
-           $)
-         (force-move $ square target)
-         (set-moved $ target))
-       state))))
+     (as-> state $
+       (if (castling-move? $ color square target)
+         (-> (move-piece $ rook-square rook-target)
+             (set-moved rook-target))
+         $)
+       (if (and pawn? (= distance 2))
+         (-> (assoc $ :en-passant en-passant-square)
+             (assoc :en-passant-timer 2))
+         $)
+       (set-piece $ (get-piece $ square) target)
+       (clear-square $ square)
+       (set-moved $ target))
+     )))
 
 (defn- move->check?
   "True if the given move puts color in check. Otherwise false."
@@ -616,10 +594,10 @@
                    (set-piece (new-piece :black :bishop) [3 3])
                    (move->check? :white [1 1] [1 2]))))}
   [state color square target]
-  (-> (force-move state square target)
+  (-> (move-piece state square target)
       (check? color)))
 
-(defn end-turn
+(defn- end-turn
   "End turn and set player-in-turn to opposite player."
   {:test (fn []
            (is (= (-> new-game
@@ -638,11 +616,42 @@
       (assoc $ :en-passant nil)
       $)))
 
-(defn move->end-turn
-  "Combination of magnus.core/move and magnus.core/end-turn."
+(defn- check-for-game-end
+  "If player in turn has 0 valid moves, result is set based on
+   whether player is in check or not. Otherwise returns state
+   unchanged."
+  {:test (fn []
+           (is (= (-> new-blank-game
+                      (set-piece (new-piece :white :king) [0 0])
+                      (set-piece (new-piece :black :rook) [7 0])
+                      (set-piece (new-piece :black :rook) [7 1])
+                      (check-for-game-end)
+                      (:result))
+                  :black)))}
+  [state]
+  (let [player-in-turn (get-player-in-turn state)
+        moves-count    (->> all-squares
+                            (filter (partial friendly?
+                                             state
+                                             player-in-turn))
+                            (map (partial valid-moves state))
+                            (apply concat)
+                            (count))]
+    (if (= 0 moves-count)
+      (if (check? state player-in-turn)
+        (set-result state ((get-player-in-turn state) opposite-color))
+        (set-result state :draw))
+      state)))
+
+(defn move
+  "Attempts to move piece from square to target and ends the turn.
+   If selected square is not owned by player in turn or the given
+   move is illegal, returns state unchanged."
   ([state square target promotion]
-   (-> (move state square target promotion)
-       (end-turn)))
+   (-> (move-piece state square target promotion)
+       (end-turn)
+       (check-for-game-end)))
   ([state square target]
-   (-> (move state square target)
-       (end-turn))))
+   (-> (move-piece state square target)
+       (end-turn)
+       (check-for-game-end))))
