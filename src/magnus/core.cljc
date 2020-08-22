@@ -192,8 +192,8 @@
                         [3 4] [4 4] [5 4]])))
            (is (in? [2 0]
                     (-> new-blank-game
-                        (set-piece (new-piece :king :white) [4 0])
-                        (set-piece (new-piece :rook :white) [0 0])
+                        (set-piece (new-piece :white :king) [4 0])
+                        (set-piece (new-piece :white :rook) [0 0])
                         (valid-moves-king :white [4 0])))))}
   [state color [file rank]]
   (let [surrounding [[(dec file) (inc rank)]
@@ -317,20 +317,20 @@
                            (valid-moves-pawn :white [1 1])))
                   (set [[1 2] [1 3]])))
            (is (= (-> new-game
-                      (set-piece (assoc (new-piece :pawn :white)
+                      (set-piece (assoc (new-piece :white :pawn)
                                         :moved?
                                         true)
                                  [2 2])
                       (valid-moves-pawn :white [2 2]))
                   '([2 3])))
            (is (= (set (-> new-game
-                           (set-piece (new-piece :pawn :black) [2 2])
+                           (set-piece (new-piece :black :pawn) [2 2])
                            (valid-moves-pawn :white [1 1])))
                   (set [[1 2] [1 3] [2 2]])))
            (is (empty? (-> new-game
-                           (set-piece (new-piece :pawn :black) [0 5])
-                           (set-piece (new-piece :pawn :black) [1 5])
-                           (set-piece (new-piece :pawn :black) [2 5])
+                           (set-piece (new-piece :black :pawn) [0 5])
+                           (set-piece (new-piece :black :pawn) [1 5])
+                           (set-piece (new-piece :black :pawn) [2 5])
                            (valid-moves-pawn :black [1 6]))))
            (is (= (set (-> new-game
                            (assoc :en-passant [2 2])
@@ -364,14 +364,14 @@
            (is (empty? (-> new-game
                            (valid-moves [3 3]))))
            (is (empty? (-> new-blank-game
-                           (set-piece (new-piece :king :white) [0 0])
-                           (set-piece (new-piece :rook :black) [1 2])
-                           (set-piece (new-piece :rook :black) [2 1])
+                           (set-piece (new-piece :white :king) [0 0])
+                           (set-piece (new-piece :black :rook) [1 2])
+                           (set-piece (new-piece :black :rook) [2 1])
                            (valid-moves [0 0]))))
            (is (empty? (-> new-blank-game
-                           (set-piece (new-piece :king :white) [0 0])
-                           (set-piece (new-piece :pawn :white) [1 1])
-                           (set-piece (new-piece :bishop :black) [3 3])
+                           (set-piece (new-piece :white :king) [0 0])
+                           (set-piece (new-piece :white :pawn) [1 1])
+                           (set-piece (new-piece :black :bishop) [3 3])
                            (valid-moves [1 1])))))}
   ([state square]
    (valid-moves state false square))
@@ -421,21 +421,21 @@
   "True if color is in check, otherwise false."
   {:test (fn []
            (is (-> new-blank-game
-                   (set-piece (new-piece :king :white) [1 1])
-                   (set-piece (new-piece :pawn :black) [2 2])
+                   (set-piece (new-piece :white :king) [1 1])
+                   (set-piece (new-piece :black :pawn) [2 2])
                    (check? :white)))
            (is (not (-> new-blank-game
-                        (set-piece (new-piece :king :white) [1 1])
-                        (set-piece (new-piece :bishop :black) [3 3])
+                        (set-piece (new-piece :white :king) [1 1])
+                        (set-piece (new-piece :black :bishop) [3 3])
                         (check? :black))))
            (is (not (-> new-blank-game
-                        (set-piece (new-piece :king :white) [1 1])
-                        (set-piece (new-piece :pawn :black) [3 3])
+                        (set-piece (new-piece :white :king) [1 1])
+                        (set-piece (new-piece :black :pawn) [3 3])
                         (check? :white))))
            (is (not (-> new-blank-game
-                        (set-piece (new-piece :king :white) [1 1])
-                        (set-piece (new-piece :pawn :black) [3 3])
-                        (set-piece (new-piece :bishop :black) [5 5])
+                        (set-piece (new-piece :white :king) [1 1])
+                        (set-piece (new-piece :black :pawn) [3 3])
+                        (set-piece (new-piece :black :bishop) [5 5])
                         (check? :white)))))}
   [state color]
   (let [opposite-color (color opposite-color)
@@ -474,15 +474,15 @@
   "True if color can castle on the given side. Otherwise false."
   {:test (fn []
            (is (-> new-blank-game
-                   (set-piece (new-piece :king :white) [4 0])
-                   (set-piece (new-piece :rook :white) [0 0])
+                   (set-piece (new-piece :white :king) [4 0])
+                   (set-piece (new-piece :white :rook) [0 0])
                    (castle? :white :queenside)))
            (is (not (-> new-blank-game
-                        (set-piece (assoc (new-piece :king :white)
+                        (set-piece (assoc (new-piece :white :king)
                                           :moved?
                                           true)
                                    [4 0])
-                        (set-piece (new-piece :rook :white) [0 0])
+                        (set-piece (new-piece :white :rook) [0 0])
                         (castle? :white :queenside)))
                "Cannot castle if availability is false
                 (either piece has previously been moved)")
@@ -490,15 +490,15 @@
                         (castle? :white :queenside)))
                "Cannot castle with pieces between king and rook")
            (is (not (-> new-blank-game
-                        (set-piece (new-piece :king :white) [4 0])
-                        (set-piece (new-piece :rook :white) [0 0])
-                        (set-piece (new-piece :rook :black) [4 7])
+                        (set-piece (new-piece :white :king) [4 0])
+                        (set-piece (new-piece :white :rook) [0 0])
+                        (set-piece (new-piece :black :rook) [4 7])
                         (castle? :white :queenside)))
                "Cannot castle if king in check")
            (is (not (-> new-blank-game
-                        (set-piece (new-piece :king :white) [4 0])
-                        (set-piece (new-piece :rook :white) [0 0])
-                        (set-piece (new-piece :rook :black) [2 7])
+                        (set-piece (new-piece :white :king) [4 0])
+                        (set-piece (new-piece :white :rook) [0 0])
+                        (set-piece (new-piece :black :rook) [2 7])
                         (castle? :white :queenside)))
                "Cannot castle if king must not pass through a
                 square that is under attack by an enemy piece"))}
@@ -540,8 +540,8 @@
    Returns state unchanged if move is not valid."
   {:test (fn []
            (is (not (nil? (-> new-blank-game
-                              (set-piece (new-piece :king :white) [4 0])
-                              (set-piece (new-piece :rook :white) [0 0])
+                              (set-piece (new-piece :white :king) [4 0])
+                              (set-piece (new-piece :white :rook) [0 0])
                               (move [4 0] [2 0])
                               (get-piece [3 0]))))
                "Rook should move when king castles")
@@ -555,7 +555,7 @@
                    :moved?)
                "Pieces should be flagged as moved")
            (is (-> new-blank-game
-                   (set-piece (new-piece :pawn :white) [0 6])
+                   (set-piece (new-piece :white :pawn) [0 6])
                    (move [0 6] [0 7] :queen)
                    (type? :queen [0 7]))
                "Promotion of pawn"))}
@@ -566,8 +566,8 @@
          opponent-back-rank  ((color opposite-color) back-rank)]
      (if (and pawn? (= target-rank opponent-back-rank))
        (set-piece (move state square target)
-                  (new-piece promotion 
-                             color)
+                  (new-piece color
+                             promotion)
                   target)
        (move state square target))))
   ([state square target]
@@ -601,13 +601,13 @@
   "True if the given move puts color in check. Otherwise false."
   {:test (fn []
            (is (-> new-blank-game
-                   (set-piece (new-piece :king :white) [0 0])
-                   (set-piece (new-piece :bishop :black) [1 2])
+                   (set-piece (new-piece :white :king) [0 0])
+                   (set-piece (new-piece :black :bishop) [1 2])
                    (move->check? :white [0 0] [0 1])))
            (is (-> new-blank-game
-                   (set-piece (new-piece :king :white) [0 0])
-                   (set-piece (new-piece :pawn :white) [1 1])
-                   (set-piece (new-piece :bishop :black) [3 3])
+                   (set-piece (new-piece :white :king) [0 0])
+                   (set-piece (new-piece :white :pawn) [1 1])
+                   (set-piece (new-piece :black :bishop) [3 3])
                    (move->check? :white [1 1] [1 2]))))}
   [state color square target]
   (-> (force-move state square target)

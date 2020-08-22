@@ -22,7 +22,7 @@
 
 (defn new-piece
   "Create a piece of given type and color."
-  [type color]
+  [color type]
   {:type   type
    :color  color
    :moved? false})
@@ -31,14 +31,14 @@
   "Creates a back rank of given color. Pieces are placed like at the start
    of a standard chess game."
   [color]
-  [(new-piece :rook color)
-   (new-piece :knight color)
-   (new-piece :bishop color)
-   (new-piece :queen color)
-   (new-piece :king color)
-   (new-piece :bishop color)
-   (new-piece :knight color)
-   (new-piece :rook color)])
+  [(new-piece color :rook)
+   (new-piece color :knight)
+   (new-piece color :bishop)
+   (new-piece color :queen)
+   (new-piece color :king)
+   (new-piece color :bishop)
+   (new-piece color :knight)
+   (new-piece color :rook)])
 
 (defn- vec-repeat
   "Same as clojure.core.repeat but returns a vector instead of a list."
@@ -48,9 +48,9 @@
 (defn pawn-rank
   "Creates a rank filled with pawns of the given color."
   {:test (fn []
-           (is (every? #{(new-piece :pawn :white)} (pawn-rank :white))))}
+           (is (every? #{(new-piece :white :pawn)} (pawn-rank :white))))}
   [color]
-  (vec-repeat 8 (new-piece :pawn color)))
+  (vec-repeat 8 (new-piece color :pawn)))
 
 (def blank-rank
   "A rank with no pieces on it."
@@ -97,10 +97,10 @@
   {:test (fn []
            (is (= (-> new-game
                       (get-piece [0 0]))
-                  (new-piece :rook :white)))
+                  (new-piece :white :rook)))
            (is (= (-> new-game
                       (get-piece [0 7]))
-                  (new-piece :rook :black)))
+                  (new-piece :black :rook)))
            (is (nil? (-> new-game
                          (get-piece [4 4])))))}
   [state [file rank]]
@@ -110,9 +110,9 @@
   "Place piece at square."
   {:test (fn []
            (is (= (-> new-game
-                     (set-piece (new-piece :knight :white) [0 0])
+                     (set-piece (new-piece :white :knight) [0 0])
                      (get-piece [0 0]))
-                  (new-piece :knight :white))))}
+                  (new-piece :white :knight))))}
   [state piece [file rank]]
   (assoc-in state [:board file rank] piece))
 
