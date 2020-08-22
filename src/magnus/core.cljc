@@ -647,11 +647,23 @@
   "Attempts to move piece from square to target and ends the turn.
    If selected square is not owned by player in turn or the given
    move is illegal, returns state unchanged."
+  {:test (fn []
+           (is (= (-> new-game
+                      (move [0 6] [0 5]))
+                  new-game)))}
   ([state square target promotion]
-   (-> (move-piece state square target promotion)
-       (end-turn)
-       (check-for-game-end)))
+   (let [player-in-turn  (get-player-in-turn state)
+         {:keys [color]} (get-piece state square)]
+     (if (= player-in-turn color)
+       (-> (move-piece state square target promotion)
+           (end-turn)
+           (check-for-game-end))
+       state)))
   ([state square target]
-   (-> (move-piece state square target)
-       (end-turn)
-       (check-for-game-end))))
+   (let [player-in-turn  (get-player-in-turn state)
+         {:keys [color]} (get-piece state square)]
+     (if (= player-in-turn color)
+       (-> (move-piece state square target)
+           (end-turn)
+           (check-for-game-end))
+       state))))
