@@ -20,13 +20,14 @@
   "Core functionality for playing Chess."
   (:require [clojure.test :refer [is]]
             [magnus.construct :refer [all-squares
-                                        clear-square
-                                        get-piece
-                                        new-blank-game
-                                        new-game
-                                        new-piece
-                                        set-moved
-                                        set-piece]]
+                                      clear-square
+                                      get-piece
+                                      get-player-in-turn
+                                      new-blank-game
+                                      new-game
+                                      new-piece
+                                      set-moved
+                                      set-piece]]
             [magnus.util :refer [in?]]))
 
 (defn manhattan-distance
@@ -165,6 +166,23 @@
               [king rook])))
 
 (declare castle?)
+(defn valid-moves-castling
+  "Returns a list of rank-file tuples representing
+   valid castling moves for a king of given color."
+  {:test (fn []
+           (is (in? [2 0]
+                    (-> new-blank-game
+                        (set-piece (new-piece :white :king) [4 0])
+                        (set-piece (new-piece :white :rook) [0 0])
+                        (valid-moves-castling :white)))))}
+  [state color]
+  (let [back-rank (color back-rank)
+        queenside (when (castle? state color :queenside)
+                    [[2 back-rank]])
+        kingside  (when (castle? state color :kingside)
+                    [[6 back-rank]])]
+    (concat queenside kingside)))
+
 (defn valid-moves-king
   "Returns a list of rank-file tuples representing
    valid moves for a king at file and rank"
@@ -189,29 +207,22 @@
            (is (= (set (-> new-game
                            (valid-moves-king :black [4 5])))
                   (set [[3 5] [5 5]
-                        [3 4] [4 4] [5 4]])))
-           (is (in? [2 0]
-                    (-> new-blank-game
-                        (set-piece (new-piece :white :king) [4 0])
-                        (set-piece (new-piece :white :rook) [0 0])
-                        (valid-moves-king :white [4 0])))))}
+                        [3 4] [4 4] [5 4]]))))}
+  
   [state color [file rank]]
-  (let [surrounding [[(dec file) (inc rank)]
-                     [(dec file) rank]
-                     [(dec file) (dec rank)]
-                     [file       (inc rank)]
-                     [file       (dec rank)]
-                     [(inc file) (inc rank)]
-                     [(inc file) rank]
-                     [(inc file) (dec rank)]]
-        back-rank    (color back-rank)]
+  (let [surrounding     [[(dec file) (inc rank)]
+                         [(dec file) rank]
+                         [(dec file) (dec rank)]
+                         [file       (inc rank)]
+                         [file       (dec rank)]
+                         [(inc file) (inc rank)]
+                         [(inc file) rank]
+                         [(inc file) (dec rank)]]
+        player-in-turn? (= color (get-player-in-turn state))]
     (as-> (remove (partial friendly? state color) surrounding) $
       (remove out-of-bounds? $)
-      (if (castle? state color :queenside)
-        (conj $ [2 back-rank])
-        $)
-      (if (castle? state color :kingside)
-        (conj $ [6 back-rank])
+      (if player-in-turn?
+        (concat $ (valid-moves-castling state color))
         $))))
 
 (defn valid-moves-rook
@@ -357,9 +368,10 @@
 (declare move->check?)
 (defn valid-moves
   "Returns a list of rank-file tuples representing
-   valid moves for the piece at square.
-   If allow-check is false (default), the player may not
-   place own king in check."
+   valid moves for piece at square.
+   If piece is not of same color as player in turn,
+   this will include moves putting them in check and
+   exclude castling moves."
   {:test (fn []
            (is (empty? (-> new-game
                            (valid-moves [3 3]))))
@@ -373,22 +385,21 @@
                            (set-piece (new-piece :white :pawn) [1 1])
                            (set-piece (new-piece :black :bishop) [3 3])
                            (valid-moves [1 1])))))}
-  ([state square]
-   (valid-moves state false square))
-  ([state allow-check? square]
-   (let [{:keys [color type]} (get-piece state square)
-         valid-moves-fns      {:king   valid-moves-king
-                               :queen  valid-moves-queen
-                               :rook   valid-moves-rook
-                               :bishop valid-moves-bishop
-                               :knight valid-moves-knight
-                               :pawn   valid-moves-pawn
-                               nil     (fn [& _] '())}
-         valid-moves-fn       (get valid-moves-fns type)
-         moves (valid-moves-fn state color square)]
-     (if allow-check?
-       moves
-       (remove (partial move->check? state color square) moves)))))
+  [state square]
+  (let [{:keys [color type]} (get-piece state square)
+        valid-moves-fns      {:king   valid-moves-king
+                              :queen  valid-moves-queen
+                              :rook   valid-moves-rook
+                              :bishop valid-moves-bishop
+                              :knight valid-moves-knight
+                              :pawn   valid-moves-pawn
+                              nil     (fn [& _] '())}
+        valid-moves-fn       (get valid-moves-fns type)
+        moves                (valid-moves-fn state color square)
+        player-in-turn?      (= color (get-player-in-turn state))]
+    (if player-in-turn?
+      (remove (partial move->check? state color square) moves)
+      moves)))
 
 (defn under-attack?
   "True if square is under attack by color. Otherwise false."
@@ -400,7 +411,7 @@
   [state color square]
   (->> all-squares
        (filter (partial friendly? state color))
-       (map (partial valid-moves state true))
+       (map (partial valid-moves state))
        (apply concat)
        (in? square)))
 
