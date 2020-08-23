@@ -27,6 +27,7 @@
                                       new-blank-game
                                       new-game
                                       new-piece
+                                      set-en-passant
                                       set-moved
                                       set-piece
                                       set-result]]
@@ -45,10 +46,8 @@
 (defn- free?
   "True if the given square is not occupied by a piece. Otherwise false."
   {:test (fn []
-           (is (and (-> new-game
-                        (free? [4 4]))))
-           (is (not (-> new-game
-                        (free? [0 0])))))}
+           (is (free? new-game [4 4]))
+           (is (not (free? new-game [0 0]))))}
   [state square]
   (nil? (get-piece state square)))
 
@@ -56,18 +55,12 @@
   "True if piece at the given square is of the given color.
    Otherwise false."
   {:test (fn []
-           (is (-> new-game
-                   (friendly? :white [0 0])))
-           (is (-> new-game
-                   (friendly? :black [7 7])))
-           (is (not (-> new-game
-                        (friendly? :black [0 0]))))
-           (is (not (-> new-game
-                        (friendly? :white [7 7])))))}
+           (is (friendly? new-game :white [0 0]))
+           (is (friendly? new-game :black [7 7]))
+           (is (not (friendly? new-game :black [0 0])))
+           (is (not (friendly? new-game :white [7 7]))))}
   [state color square]
-  (-> (get-piece state square)
-      (:color)
-      (= color)))
+  (= color (:color (get-piece state square))))
 
 (def ^:private opposite-color
   "Maps color to opposite color."
@@ -78,32 +71,22 @@
   "True if piece at the given square is of the color
    opposite to the one given.Otherwise false."
   {:test (fn []
-           (is (-> new-game
-                   (enemy? :black [0 0])))
-           (is (-> new-game
-                   (enemy? :white [7 7])))
-           (is (not (-> new-game
-                        (enemy? :white [0 0]))))
-           (is (not (-> new-game
-                        (enemy? :black [7 7]))))
-           (is (not (-> new-game
-                        (enemy? :black [4 4])))))}
+           (is (enemy? new-game :black [0 0]))
+           (is (enemy? new-game :white [7 7]))
+           (is (not (enemy? new-game :white [0 0])))
+           (is (not (enemy? new-game :black [7 7])))
+           (is (not (enemy? new-game :black [4 4]))))}
   [state color square]
-  (-> (get-piece state square)
-      (:color)
-      (= (color opposite-color))))
+  (= (color opposite-color)
+     (:color (get-piece state square))))
 
 (defn- type?
   "True if piece at the given square is of the given type. Otherwise false."
   {:test (fn []
-           (is (-> new-game
-                   (type? :king [4 0])))
-           (is (not (-> new-game
-                        (type? :pawn [0 0])))))}
+           (is (type? new-game :king [4 0]))
+           (is (not (type? new-game :pawn [0 0]))))}
   [state type square]
-  (-> (get-piece state square)
-      (:type)
-      (= type)))
+  (= type (:type (get-piece state square))))
 
 (defn- remove-blocked
   "Takes a list of rank file tuples representing a line of valid moves for a
@@ -111,21 +94,13 @@
    piece.
    If that piece is an enemy piece, it is also included in the returning list"
   {:test (fn []
-           (is (-> new-game
-                   (remove-blocked :white
-                                   [[4 4] [4 5] [4 6] [4 7] [4 8]]))
+           (is (remove-blocked new-game :white [[4 4] [4 5] [4 6] [4 7] [4 8]])
                [[4 4] [4 5] [4 6] [4 7]])
-           (is (-> new-game
-                   (remove-blocked :black
-                                   [[4 4] [4 5] [4 6] [4 7] [4 8]]))
+           (is (remove-blocked new-game :black [[4 4] [4 5] [4 6] [4 7] [4 8]])
                [[4 4] [4 5] [4 6]])
-           (is (-> new-game
-                   (remove-blocked :white
-                                   [[4 4] [4 3] [4 2] [4 1] [4 0]]))
+           (is (remove-blocked new-game :white [[4 4] [4 3] [4 2] [4 1] [4 0]])
                [[4 4] [4 3] [4 2]])
-           (is (-> new-game
-                   (remove-blocked :black
-                                   [[4 4] [4 3] [4 2] [4 1] [4 0]]))
+           (is (remove-blocked new-game :black [[4 4] [4 3] [4 2] [4 1] [4 0]])
                [[4 4] [4 3] [4 2] [4 1]]))}
   [state color squares]
   (let [[free not-free]   (split-with (partial free? state) squares)
@@ -163,75 +138,51 @@
                         (valid-moves-castling :white)))))}
   [state color]
   (let [back-rank (color back-rank)
-        queenside (when (castle? state color :queenside)
-                    [[2 back-rank]])
-        kingside  (when (castle? state color :kingside)
-                    [[6 back-rank]])]
+        queenside (when (castle? state color :queenside) [[2 back-rank]])
+        kingside  (when (castle? state color :kingside)  [[6 back-rank]])]
     (concat queenside kingside)))
 
 (defn- valid-moves-king
   "Returns a list of rank-file tuples representing
    valid moves for a king at file and rank"
   {:test (fn []
-           (is (-> new-game
-                   (valid-moves-king :white [4 4])
-                   (count))
-               8)
-           (is (-> new-game
-                   (valid-moves-king :white [0 0])
-                   (empty?)))
-           (is (= (set (-> new-game
-                           (valid-moves-king :white [4 4])))
-                  (set [[3 5] [4 5] [5 5]
-                        [3 4] [5 4]
-                        [3 3] [4 3] [5 3]])))
-           (is (= (set (-> new-game
-                           (valid-moves-king :white [4 5])))
-                  (set [[3 6] [4 6] [5 6]
-                        [3 5] [5 5]
-                        [3 4] [4 4] [5 4]])))
-           (is (= (set (-> new-game
-                           (valid-moves-king :black [4 5])))
-                  (set [[3 5] [5 5]
-                        [3 4] [4 4] [5 4]]))))}
+           (is (= (count (valid-moves-king new-game :white [4 4]))
+                  8))
+           (is (empty? (valid-moves-king new-game :white [0 0])))
+           (is (= (set (valid-moves-king new-game :white [4 4]))
+                  #{[3 5] [4 5] [5 5] [3 4] [5 4] [3 3] [4 3] [5 3]}))
+           (is (= (set (valid-moves-king new-game :white [4 5]))
+                  #{[3 6] [4 6] [5 6] [3 5] [5 5] [3 4] [4 4] [5 4]}))
+           (is (= (set (valid-moves-king new-game :black [4 5]))
+                  #{[3 5] [5 5] [3 4] [4 4] [5 4]})))}
   
   [state color [file rank]]
-  (let [surrounding     [[(dec file) (inc rank)]
-                         [(dec file) rank]
-                         [(dec file) (dec rank)]
-                         [file       (inc rank)]
-                         [file       (dec rank)]
-                         [(inc file) (inc rank)]
-                         [(inc file) rank]
-                         [(inc file) (dec rank)]]
+  (let [surrounding     (for [f (range (dec file) (+ file 2))
+                              r (range (dec rank) (+ rank 2))
+                              :when (not (= [file rank] [f r]))]
+                          [f r])
         player-in-turn? (= color (get-player-in-turn state))]
-    (as-> (remove (partial friendly? state color) surrounding) $
-      (remove out-of-bounds? $)
-      (if player-in-turn?
-        (concat $ (valid-moves-castling state color))
-        $))))
+    (cond->> (remove out-of-bounds? surrounding)
+      :always (remove (partial friendly? state color))
+      player-in-turn? (concat (valid-moves-castling state color)))))
 
 (defn- valid-moves-rook
   "Returns a list of rank-file tuples representing
    valid moves for a rook at file and rank"
   {:test (fn []
-           (is (-> new-game
-                   (valid-moves-rook :white [0 0])
-                   (empty?)))
-           (is (= (set (-> new-game
-                           (valid-moves-rook :white [4 4])))
-                  (set [[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
-                        [7 4] [4 3] [4 2] [4 5] [4 6]])))
-           (is (= (set (-> new-game
-                           (valid-moves-rook :black [4 4])))
-                  (set [[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
-                        [7 4] [4 1] [4 3] [4 2] [4 5]]))))}
+           (is (empty? (valid-moves-rook new-game :white [0 0])))
+           (is (= (set (valid-moves-rook new-game :white [4 4]))
+                  #{[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
+                    [7 4] [4 3] [4 2] [4 5] [4 6]}))
+           (is (= (set (valid-moves-rook new-game :black [4 4]))
+                  #{[0 4] [1 4] [2 4] [3 4] [5 4] [6 4]
+                    [7 4] [4 1] [4 3] [4 2] [4 5]})))}
   [state color [file rank]]
-  (let [north (map vector (repeat file) (range (inc rank) 8))
-        south (map vector (repeat file) (range (dec rank) -1 -1))
-        east  (map vector (range (inc file) 8) (repeat rank))
-        west  (map vector (range (dec file) -1 -1) (repeat rank))]
-    (->> [north south east west]
+  (let [north (for [r (range (inc rank) 8)]     [file r])
+        south (for [r (range (dec rank) -1 -1)] [file r])
+        east  (for [f (range (inc file) 8)]     [f rank])
+        west  (for [f (range (dec file) -1 -1)] [f rank])]
+    (->> (list north south east west)
          (map (partial remove-blocked state color))
          (apply concat))))
 
@@ -239,20 +190,16 @@
   "Returns a list of rank-file tuples representing
    valid moves for a bishop at file and rank"
   {:test (fn []
-           (is (-> new-game
-                   (valid-moves-bishop :white [2 0])
-                   (empty?)))
-           (is (= (set (-> new-game
-                           (valid-moves-bishop :white [4 4])))
-                  (set [[3 5] [2 6] [5 5] [6 6] [3 3] [2 2] [5 3] [6 2]])))
-           (is (= (set (-> new-game
-                           (valid-moves-bishop :black [4 4])))
-                  (set [[3 5] [5 5] [3 3] [2 2] [1 1] [5 3] [6 2] [7 1]]))))}
+           (is (empty? (valid-moves-bishop new-game :white [2 0])))
+           (is (= (set (valid-moves-bishop new-game :white [4 4]))
+                  #{[3 5] [2 6] [5 5] [6 6] [3 3] [2 2] [5 3] [6 2]}))
+           (is (= (set (valid-moves-bishop new-game :black [4 4]))
+                  #{[3 5] [5 5] [3 3] [2 2] [1 1] [5 3] [6 2] [7 1]})))}
   [state color [file rank]]
   (let [nw (map vector (range (dec file) -1 -1) (range (inc rank) 8))
         sw (map vector (range (dec file) -1 -1) (range (dec rank) -1 -1))
-        ne (map vector (range (inc file) 8) (range (inc rank) 8))
-        se (map vector (range (inc file) 8) (range (dec rank) -1 -1))]
+        ne (map vector (range (inc file) 8)     (range (inc rank) 8))
+        se (map vector (range (inc file) 8)     (range (dec rank) -1 -1))]
     (->> [nw sw ne se]
          (map (partial remove-blocked state color))
          (apply concat))))
@@ -261,15 +208,9 @@
   "Returns a list of rank-file tuples representing
    valid moves for a queen at square"
   {:test (fn []
-           (is (-> new-game
-                   (valid-moves-queen :white [0 0])
-                   (empty?)))
-           (is (= (-> new-game
-                      (valid-moves-queen :white [4 4])
-                      (count))
-                  (-> new-game
-                      (valid-moves-queen :black [4 4])
-                      (count))
+           (is (empty? (valid-moves-queen new-game :white [0 0])))
+           (is (= (count (valid-moves-queen new-game :white [4 4]))
+                  (count (valid-moves-queen new-game :black [4 4]))
                   19)))}
   [state color square]
   (concat (valid-moves-rook state color square)
@@ -279,20 +220,12 @@
   "Returns a list of rank-file tuples representing
    valid moves for a knight at file and rank"
   {:test (fn []
-           (is (= (-> new-game
-                      (valid-moves-knight :white [0 0]))
+           (is (= (valid-moves-knight new-game :white [0 0])
                   '([1 2])))
-           (is (= (set (-> new-game
-                           (valid-moves-knight :white [4 4])))
-                  (set [[3 6] [5 6]
-                        [6 5] [6 3]
-                        [3 2] [5 2]
-                        [2 5] [2 3]])))
-           (is (= (set (-> new-game
-                           (valid-moves-knight :black [4 4])))
-                  (set [[6 5] [6 3]
-                        [3 2] [5 2]
-                        [2 5] [2 3]]))))}
+           (is (= (set (valid-moves-knight new-game :white [4 4]))
+                  #{[3 6] [5 6] [6 5] [6 3] [3 2] [5 2] [2 5] [2 3]}))
+           (is (= (set (valid-moves-knight new-game :black [4 4]))
+                  #{[6 5] [6 3] [3 2] [5 2] [2 5] [2 3]})))}
   [state color [file rank]]
   (let [jumps [[(+ file 2) (+ rank 1)]
                [(+ file 2) (- rank 1)]
@@ -302,49 +235,39 @@
                [(- file 1) (+ rank 2)]
                [(+ file 1) (- rank 2)]
                [(- file 1) (- rank 2)]]]
-    (->> jumps
-         (remove (partial friendly? state color))
-         (remove out-of-bounds?))))
+    (->> (remove out-of-bounds? jumps)
+     (remove (partial friendly? state color)))))
 
 (defn- valid-moves-pawn
   "Returns a list of rank-file tuples representing
    valid moves for a pawn at file and rank"
   {:test (fn []
-           (is (= (set (-> new-game
-                           (valid-moves-pawn :white [1 1])))
-                  (set [[1 2] [1 3]])))
-           (is (= (-> new-game
-                      (set-piece (assoc (new-piece :white :pawn)
-                                        :moved?
-                                        true)
-                                 [2 2])
+           (is (= (set (valid-moves-pawn new-game :white [1 1]))
+                   #{[1 2] [1 3]}))
+           (is (= (-> (set-moved new-game [2 2])
                       (valid-moves-pawn :white [2 2]))
                   '([2 3])))
-           (is (= (set (-> new-game
-                           (set-piece (new-piece :black :pawn) [2 2])
+           (is (= (set (-> (set-piece new-game (new-piece :black :pawn) [2 2])
                            (valid-moves-pawn :white [1 1])))
-                  (set [[1 2] [1 3] [2 2]])))
-           (is (empty? (-> new-game
-                           (set-piece (new-piece :black :pawn) [0 5])
+                  #{[1 2] [1 3] [2 2]}))
+           (is (empty? (-> (set-piece new-game (new-piece :black :pawn) [0 5])
                            (set-piece (new-piece :black :pawn) [1 5])
                            (set-piece (new-piece :black :pawn) [2 5])
                            (valid-moves-pawn :black [1 6]))))
-           (is (= (set (-> new-game
-                           (assoc :en-passant [2 2])
+           (is (= (set (-> (set-en-passant new-game [2 2])
                            (valid-moves-pawn :white [1 1])))
-                  (set [[1 2] [1 3] [2 2]]))))}
+                  #{[1 2] [1 3] [2 2]})))}
   [state color [file rank]]
   (let [moved?     (:moved? (get-piece state [file rank]))
-        pawn-direction  (color {:white 1
+        direction  (color {:white 1
                            :black -1})
-        one-step   [[file (+ rank pawn-direction)]]
-        two-steps  (if (not moved?)
-                     [[file (+ rank (* pawn-direction 2))]]
-                     [])
+        one-step   [[file (+ rank direction)]]
+        two-steps  (when (not moved?)
+                     [[file (+ rank (* direction 2))]])
         forward    (concat one-step two-steps)
-        diagonals  [[(dec file) (+ rank pawn-direction)]
-                    [(inc file) (+ rank pawn-direction)]]
-        en-passant (:en-passant state)]
+        diagonals  [[(dec file) (+ rank direction)]
+                    [(inc file) (+ rank direction)]]
+        en-passant (get-en-passant state)]
     (concat (take-while (partial free? state)
                         forward)
             (filter #(or (enemy? state color %)
@@ -359,8 +282,7 @@
    this will include moves putting them in check and
    exclude castling moves."
   {:test (fn []
-           (is (empty? (-> new-game
-                           (valid-moves [3 3]))))
+           (is (empty? (valid-moves new-game [3 3])))
            (is (empty? (-> new-blank-game
                            (set-piece (new-piece :white :king) [0 0])
                            (set-piece (new-piece :black :rook) [1 2])
@@ -390,13 +312,10 @@
 (defn- under-attack?
   "True if square is under attack by color. Otherwise false."
   {:test (fn []
-           (is (-> new-game
-                   (under-attack? :black [0 5])))
-           (is (not (-> new-game
-                        (under-attack? :black [0 0])))))}
+           (is (under-attack? new-game :black [0 5]))
+           (is (not (under-attack? new-game :black [0 0]))))}
   [state color square]
-  (->> all-squares
-       (filter (partial friendly? state color))
+  (->> (filter (partial friendly? state color) all-squares)
        (map (partial valid-moves state))
        (apply concat)
        (in? square)))
@@ -405,12 +324,10 @@
   "Get rank-file tuple for king of given color's position.
    Returns nil if no king of given color is found."
   {:test (fn []
-           (is (= (-> new-game
-                      (king-position :white))
+           (is (= (king-position new-game :white)
                   [4 0])))}
   [state color]
-  (->> all-squares
-       (filter (partial friendly? state color))
+  (->> (filter (partial friendly? state color) all-squares)
        (filter (partial type? state :king))
        (first)))
 
@@ -435,30 +352,25 @@
                         (set-piece (new-piece :black :bishop) [5 5])
                         (check? :white)))))}
   [state color]
-  (let [opposite-color (color opposite-color)
-        king-position  (king-position state color)]
-    (under-attack? state opposite-color king-position)))
+  (under-attack? state
+                 (color opposite-color)
+                 (king-position state color)))
 
 (defn- valid-move?
   "True if a move from the starting square to the target square is valid.
    Otherwise false."
   {:test (fn []
-           (is (-> new-game
-                   (valid-move? [1 1] [1 2])))
-           (is (not (-> new-game
-                        (valid-move? [1 1] [1 4])))))}
+           (is (valid-move? new-game [1 1] [1 2]))
+           (is (not (valid-move? new-game [1 1] [1 4]))))}
   [state square target]
-  (in? target
-       (valid-moves state square)))
+  (in? target (valid-moves state square)))
 
 (defn- castling-move?
   "True if the squares given constitute a castling move for color.
    Otherwise false."
   {:test (fn []
-           (is (-> new-game
-                   (castling-move? :white [4 0] [2 0])))
-           (is (-> new-game
-                   (castling-move? :black [4 7] [6 7]))))}
+           (is (castling-move? new-game :white [4 0] [2 0]))
+           (is (castling-move? new-game :black [4 7] [6 7])))}
   [state color [file rank] [target-file target-rank]]
   (let [back-rank (color back-rank)]
     (and (type? state :king [file rank])
@@ -475,10 +387,8 @@
                    (set-piece (new-piece :white :rook) [0 0])
                    (castle? :white :queenside)))
            (is (not (-> new-blank-game
-                        (set-piece (assoc (new-piece :white :king)
-                                          :moved?
-                                          true)
-                                   [4 0])
+                        (set-piece (new-piece :white :king) [4 0])
+                        (set-moved [4 0])
                         (set-piece (new-piece :white :rook) [0 0])
                         (castle? :white :queenside)))
                "Cannot castle if availability is false
@@ -519,22 +429,18 @@
                               (move-piece [4 0] [2 0])
                               (get-piece [3 0]))))
                "Rook should move when king castles")
-           (is (-> new-game
-                   (move-piece [0 1] [0 3])
-                   (:en-passant))
+           (is (-> (move-piece new-game [0 1] [0 3])
+                   (get-en-passant))
                [0 2])
-           (is (-> new-game
-                   (move-piece [0 1] [0 2])
+           (is (-> (move-piece new-game [0 1] [0 2])
                    (get-piece [0 2])
                    :moved?)
                "Pieces should be flagged as moved")
-           (is (-> new-blank-game
-                   (set-piece (new-piece :white :pawn) [0 6])
+           (is (-> (set-piece new-blank-game (new-piece :white :pawn) [0 6])
                    (move-piece [0 6] [0 7] :queen)
                    (type? :queen [0 7]))
                "Promotion of pawn")
-           (is (nil? (-> new-game
-                         (set-piece (new-piece :white :pawn) [0 4])
+           (is (nil? (-> (set-piece new-game (new-piece :white :pawn) [0 4])
                          (move-piece [1 6] [1 4])
                          (move-piece [0 4] [1 5])
                          (get-piece [1 4])))))}
@@ -568,26 +474,22 @@
              (set-moved rook-target))
          $)
        (if (and pawn? (= target pawn-long-move))
-         (-> (assoc $ :en-passant en-passant-square)
-             (assoc :en-passant-timer 2))
+         (set-en-passant $ en-passant-square)
          $)
        (if (and pawn? (= target (get-en-passant $)))
          (clear-square $ [target-file rank])
          $)
        (set-piece $ (get-piece $ square) target)
        (clear-square $ square)
-       (set-moved $ target))
-     )))
+       (set-moved $ target)))))
 
 (defn- move->check?
   "True if the given move puts color in check. Otherwise false."
   {:test (fn []
-           (is (-> new-blank-game
-                   (set-piece (new-piece :white :king) [0 0])
+           (is (-> (set-piece new-blank-game (new-piece :white :king) [0 0])
                    (set-piece (new-piece :black :bishop) [1 2])
                    (move->check? :white [0 0] [0 1])))
-           (is (-> new-blank-game
-                   (set-piece (new-piece :white :king) [0 0])
+           (is (-> (set-piece new-blank-game (new-piece :white :king) [0 0])
                    (set-piece (new-piece :white :pawn) [1 1])
                    (set-piece (new-piece :black :bishop) [3 3])
                    (move->check? :white [1 1] [1 2]))))}
@@ -598,20 +500,18 @@
 (defn- end-turn
   "End turn and set player-in-turn to opposite player."
   {:test (fn []
-           (is (= (-> new-game
-                      (end-turn)
-                      (:player-in-turn))
+           (is (= (-> (end-turn new-game)
+                      (get-player-in-turn))
                   :black))
-           (nil? (-> new-game
-                     (assoc :en-passant [0 3])
+           (nil? (-> (set-en-passant new-game [0 3])
                      (end-turn)
                      (end-turn)
-                     :en-passant)))}
+                     (get-en-passant))))}
   [state]
   (as-> (update state :player-in-turn opposite-color) $
     (update $ :en-passant-timer #(max (dec %) 0))
     (if (= (:en-passant-timer $) 0)
-      (assoc $ :en-passant nil)
+      (set-en-passant $ nil)
       $)))
 
 (defn- check-for-game-end
@@ -619,8 +519,7 @@
    whether player is in check or not. Otherwise returns state
    unchanged."
   {:test (fn []
-           (is (= (-> new-blank-game
-                      (set-piece (new-piece :white :king) [0 0])
+           (is (= (-> (set-piece new-blank-game (new-piece :white :king) [0 0])
                       (set-piece (new-piece :black :rook) [7 0])
                       (set-piece (new-piece :black :rook) [7 1])
                       (check-for-game-end)
@@ -646,8 +545,7 @@
    If selected square is not owned by player in turn or the given
    move is illegal, returns state unchanged."
   {:test (fn []
-           (is (= (-> new-game
-                      (move [0 6] [0 5]))
+           (is (= (move new-game [0 6] [0 5])
                   new-game)))}
   ([state square target promotion]
    (let [player-in-turn  (get-player-in-turn state)
