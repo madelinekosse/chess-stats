@@ -136,6 +136,11 @@
   [state square]
   (set-piece state nil square))
 
+(defn get-en-passant
+  "Get en-passant square if there is one, else nil."
+  [state]
+  (get state :en-passant))
+
 (defn get-player-in-turn
   "Returns the player who's turn it currently is."
   {:test (fn []

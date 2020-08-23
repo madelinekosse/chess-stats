@@ -21,6 +21,7 @@
   (:require [clojure.test :refer [is]]
             [magnus.construct :refer [all-squares
                                       clear-square
+                                      get-en-passant
                                       get-piece
                                       get-player-in-turn
                                       new-blank-game
@@ -30,17 +31,6 @@
                                       set-piece
                                       set-result]]
             [magnus.util :refer [in?]]))
-
-(defn- manhattan-distance
-  "Manhattan distance between two squares."
-  {:test (fn []
-           (is (= (manhattan-distance [0 0] [0 0])
-                  0))
-           (is (= (manhattan-distance [0 0] [4 2])
-                  (manhattan-distance [4 2] [0 0])
-                  6)))}
-  [a b]
-  (apply + (map #(Math/abs (- %1 %2)) a b)))
 
 (defn- out-of-bounds?
   "True if the given file rank coordinates are outside the chessboard.
@@ -345,15 +335,15 @@
                   (set [[1 2] [1 3] [2 2]]))))}
   [state color [file rank]]
   (let [moved?     (:moved? (get-piece state [file rank]))
-        direction  (color {:white 1
+        pawn-direction  (color {:white 1
                            :black -1})
-        one-step   [[file (+ rank direction)]]
+        one-step   [[file (+ rank pawn-direction)]]
         two-steps  (if (not moved?)
-                     [[file (+ rank (* direction 2))]]
+                     [[file (+ rank (* pawn-direction 2))]]
                      [])
         forward    (concat one-step two-steps)
-        diagonals  [[(dec file) (+ rank direction)]
-                    [(inc file) (+ rank direction)]]
+        diagonals  [[(dec file) (+ rank pawn-direction)]
+                    [(inc file) (+ rank pawn-direction)]]
         en-passant (:en-passant state)]
     (concat (take-while (partial free? state)
                         forward)
@@ -542,7 +532,12 @@
                    (set-piece (new-piece :white :pawn) [0 6])
                    (move-piece [0 6] [0 7] :queen)
                    (type? :queen [0 7]))
-               "Promotion of pawn"))}
+               "Promotion of pawn")
+           (is (nil? (-> new-game
+                         (set-piece (new-piece :white :pawn) [0 4])
+                         (move-piece [1 6] [1 4])
+                         (move-piece [0 4] [1 5])
+                         (get-piece [1 4])))))}
   ([state square target promotion]
    (let [{:keys [color type]} (get-piece state square)
          pawn?                (= type :pawn)
@@ -562,19 +557,22 @@
          rook-target-file          (get {2 3 6 5} target-file)
          rook-target               [rook-target-file target-rank]
          pawn?                     (= type :pawn)
-         direction                 (color {:white 1
+         pawn-direction            (color {:white 1
                                            :black -1})
          [file rank]               square
-         distance                  (manhattan-distance square target)
-         en-passant-square         [file (+ rank direction)]]
+         pawn-long-move            [file (+ rank (* 2 pawn-direction))]      
+         en-passant-square         [file (+ rank pawn-direction)]]
      (as-> state $
        (if (castling-move? $ color square target)
          (-> (move-piece $ rook-square rook-target)
              (set-moved rook-target))
          $)
-       (if (and pawn? (= distance 2))
+       (if (and pawn? (= target pawn-long-move))
          (-> (assoc $ :en-passant en-passant-square)
              (assoc :en-passant-timer 2))
+         $)
+       (if (and pawn? (= target (get-en-passant $)))
+         (clear-square $ [target-file rank])
          $)
        (set-piece $ (get-piece $ square) target)
        (clear-square $ square)
