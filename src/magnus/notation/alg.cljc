@@ -16,32 +16,25 @@
 ;; You should have received a copy of the GNU Lesser General Public License
 ;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
-(ns magnus.notation
-  "Everything related to Chess notation."
+(ns magnus.notation.alg
+  "Algebraic notation."
   (:require [clojure.test :refer [is]]))
 
 (defn file&rank->str
   "Converts rank and file as integers into an algebraic notation string"
   {:test (fn []
-           (is (= (file&rank->str [0 0])
-                  "a1"))
-           (is (= (file&rank->str [7 7])
-                  "h8"))
-           (is (= (file&rank->str [3 4])
-                  "d5")))}
+           (is (= (file&rank->str [0 0]) "a1"))
+           (is (= (file&rank->str [7 7]) "h8"))
+           (is (= (file&rank->str [3 4]) "d5")))}
   [[file rank]]
   (str (char (+ 97 file)) (inc rank)))
 
 (defn str->file&rank
-  "Converts a string representing a square in algebraic
-   notation into an integer tuple."
+  "Converts an algebraic notation string into an integer tuple."
   {:test (fn []
-           (is (= (str->file&rank "a1")
-                  [0 0]))
-           (is (= (str->file&rank "h8")
-                  [7 7]))
-           (is (= (str->file&rank "d5")
-                  [3 4])))}
+           (is (= (str->file&rank "a1") [0 0]))
+           (is (= (str->file&rank "h8") [7 7]))
+           (is (= (str->file&rank "d5") [3 4])))}
   [s]
   (let [file (int (first s))
         rank (int (second s))]

@@ -19,17 +19,29 @@
 (ns magnus.construct
   "Functions related to creating and modifying data structures used in Magnus."
   (:require [clojure.test :refer [is]]
+            [clojure.set :refer [union]]
             [magnus.util :refer [vec-repeat]]))
 
+(def white-pieces
+  "Set of all keywords representing white pieces."
+  #{:P :N :B :R :Q :K})
+
+(def black-pieces
+  "Set of all keywords representing black pieces."
+  #{:p :n :b :r :q :k})
+
+(def pieces
+  "Set of all keywords representing all pieces."
+  (union white-pieces black-pieces))
+
 (defn new-piece
-  "Create a piece of given type and color."
+  "Returns a piece of given type and color."
   [color type]
   {:type   type
-   :color  color
-   :moved? false})
+   :color  color})
 
 (defn- new-back-rank
-  "Creates a back rank of given color. Pieces are placed like at the start
+  "Returns a back rank of given color. Pieces are placed like at the start
    of a standard chess game."
   [color]
   [(new-piece color :rook)
@@ -42,7 +54,7 @@
    (new-piece color :rook)])
 
 (defn- pawn-rank
-  "Creates a rank filled with pawns of the given color."
+  "Returns a rank filled with pawns of the given color."
   {:test (fn []
            (is (every? #{(new-piece :white :pawn)} (pawn-rank :white))))}
   [color]
@@ -72,10 +84,7 @@
   "Beginning state for a standard chess game."
   {:board            standard-board
    :player-in-turn   :white
-   :castling         {:white {:kingside  true
-                              :queenside true}
-                      :black {:kingside  true
-                              :queenside true}}
+   :castling         #{:K :Q :k :q}
    :en-passant       nil
    :en-passant-timer 0})
 
@@ -91,36 +100,39 @@
 (defn get-piece
   "Get piece at square."
   {:test (fn []
-           (is (= (-> new-game
-                      (get-piece [0 0]))
+           (is (= (get-piece new-game [0 0])
                   (new-piece :white :rook)))
-           (is (= (-> new-game
-                      (get-piece [0 7]))
+           (is (= (get-piece new-game [0 7])
                   (new-piece :black :rook)))
-           (is (nil? (-> new-game
-                         (get-piece [4 4])))))}
+           (is (nil? (get-piece new-game [4 4]))))}
   [state [file rank]]
   (get-in state [:board file rank]))
+
+(defn castle-available?
+  "True if neither king, nor castle on given side, of 
+   color has moved. Otherwise false."
+  [state side]
+  (contains? (:castling state) side))
+
+(defn remove-castling
+  "Removes castling availability on the specified side/sides"
+  {:test (fn []
+           (is (= (:castling (remove-castling new-game :K))
+                  #{:Q :k :q}))
+           (is (= (:castling (remove-castling new-game :K :q))
+                  #{:Q :k})))}
+  [state & sides]
+  (update state :castling #(apply disj % sides)))
 
 (defn set-piece
   "Place piece at square."
   {:test (fn []
            (is (= (-> new-game
-                     (set-piece (new-piece :white :knight) [0 0])
-                     (get-piece [0 0]))
+                      (set-piece (new-piece :white :knight) [0 0])
+                      (get-piece [0 0]))
                   (new-piece :white :knight))))}
   [state piece [file rank]]
   (assoc-in state [:board file rank] piece))
-
-(defn set-moved
-  "Mark piece at square as having been moved."
-  {:test (fn []
-           (is (-> new-game
-                   (set-moved [0 0])
-                   (get-piece [0 0])
-                   :moved?)))}
-  [state [file rank]]
-  (update-in state [:board file rank :moved?] (fn [_] true)))
 
 (defn set-result
   "Sets result of a game."

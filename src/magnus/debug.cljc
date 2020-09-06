@@ -20,17 +20,17 @@
   "Useful functions for REPL or print debugging.")
 
 (def ^:private color&type->unicode {:white {:king  "♚"
-                                 :queen  "♛"
-                                 :rook   "♜"
-                                 :bishop "♝"
-                                 :knight "♞"
-                                 :pawn   "♟︎"}
-                         :black {:king   "♔"
-                                 :queen  "♕"
-                                 :rook   "♖"
-                                 :bishop "♗"
-                                 :knight "♘"
-                                 :pawn   "♙"}})
+                                            :queen  "♛"
+                                            :rook   "♜"
+                                            :bishop "♝"
+                                            :knight "♞"
+                                            :pawn   "♟︎"}
+                                    :black {:king   "♔"
+                                            :queen  "♕"
+                                            :rook   "♖"
+                                            :bishop "♗"
+                                            :knight "♘"
+                                            :pawn   "♙"}})
 
 (defn- piece->unicode
   "Convert piece into unicode symbol. Returns a single 
