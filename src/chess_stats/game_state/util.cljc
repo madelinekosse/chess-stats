@@ -16,7 +16,7 @@
 ;; You should have received a copy of the GNU Lesser General Public License
 ;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
-(ns magnus.util
+(ns chess-stats.game-state.util
   "Utility functions for Magnus. Probably not of interest unless you're
    modifying the library itself."
   (:require [clojure.test :refer [is]]))

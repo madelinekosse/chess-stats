@@ -16,10 +16,10 @@
 ;; You should have received a copy of the GNU Lesser General Public License
 ;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
-(ns magnus.construct
+(ns chess-stats.game-state.construct
   "Functions related to creating and modifying data structures used in Magnus."
   (:require [clojure.test :refer [is]]
-            [magnus.util :refer [vec-repeat]]))
+            [chess-stats.game-state.util :refer [vec-repeat]]))
 
 (defn new-piece
   "Create a piece of given type and color."

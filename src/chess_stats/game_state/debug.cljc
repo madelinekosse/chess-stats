@@ -16,7 +16,7 @@
 ;; You should have received a copy of the GNU Lesser General Public License
 ;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
-(ns magnus.debug
+(ns chess-stats.game-state.debug
   "Useful functions for REPL or print debugging.")
 
 (def ^:private color&type->unicode {:white {:king  "♚"

@@ -16,7 +16,7 @@
 ;; You should have received a copy of the GNU Lesser General Public License
 ;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
-(ns magnus.notation
+(ns chess-stats.util.notation
   "Everything related to Chess notation."
   (:require [clojure.test :refer [is]]))
 

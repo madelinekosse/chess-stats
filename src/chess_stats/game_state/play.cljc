@@ -16,10 +16,10 @@
 ;; You should have received a copy of the GNU Lesser General Public License
 ;; along with Magnus.  If not, see <https://www.gnu.org/licenses/>.
 
-(ns magnus.core
+(ns chess-stats.game-state.play
   "Core functionality for playing Chess."
   (:require [clojure.test :refer [is]]
-            [magnus.construct :refer [all-squares
+            [chess-stats.game-state.construct :refer [all-squares
                                       clear-square
                                       get-en-passant
                                       get-piece
@@ -30,7 +30,7 @@
                                       set-moved
                                       set-piece
                                       set-result]]
-            [magnus.util :refer [in?]]))
+            [chess-stats.game-state.util :refer [in?]]))
 
 (defn- out-of-bounds?
   "True if the given file rank coordinates are outside the chessboard.
