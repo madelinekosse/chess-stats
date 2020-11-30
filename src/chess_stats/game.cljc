@@ -1,6 +1,6 @@
 (ns chess-stats.game
   (:require [clojure.test :refer [is]]
-            [chess-stats.util.test-utils :refer [sample-game]]
+            [chess-stats.util.test-utils :as tests]
             [chess-stats.game-state.construct :as state]
             [chess-stats.game-state.play :as rules]))
 
@@ -148,20 +148,25 @@
   "Play the move and add the game state to the map"
   {:test (fn []
            (let [result (process-move
-                         state/new-game
+                         tests/promotion-endgame
                          {:move {:piece :pawn
-                                 :to {:file :e :rank :4}}})]
+                                 :to {:file :e :rank :8}
+                                 :promotion :queen}})]
              (is (= (-> result
                         :state
-                        (state/get-piece [4 3]))
-                    {:type :pawn
-                     :color :white
-                     :moved? true}))))}
+                        (state/get-piece [4 7])
+                        :type)
+                    :queen))))}
   [game move-data]
   (let [move (add-coordinates game (:move move-data))
-        state (rules/move game
-                          (get-in move [:from :coordinates])
-                          (get-in move [:to :coordinates]))]
+        state (if (contains? move :promotion)
+                (rules/move game
+                            (get-in move [:from :coordinates])
+                            (get-in move [:to :coordinates])
+                            (get move :promotion))
+                (rules/move game
+                            (get-in move [:from :coordinates])
+                            (get-in move [:to :coordinates])))]
     {:move move
      :state state}))
 
