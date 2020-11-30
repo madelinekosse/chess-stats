@@ -121,7 +121,7 @@
                           :rank :3}
                    :to {:file :d :rank :5}})))}
   [notation-string]
-  (let [[move-map notation-string] (if (str/includes? notation-string "=")
+  (let [[move-meta notation-string] (if (str/includes? notation-string "=")
                                      [{:promotion (->> notation-string
                                                       last
                                                       str
@@ -130,26 +130,6 @@
                                            (drop-last 2)
                                            (apply str))]
                                      [{} notation-string])]
-    (merge move-map (piece-moved-with-squares notation-string))))
-
-(defn coordinates
-  "Returns numeric file and rank of the destination square"
-  {:test (fn[]
-           (is (= (coordinates {:to {:file :h
-                                     :rank :8}})
-                  [7 7]))
-           (is (= (coordinates {:to {:file :a
-                                     :rank :1}})
-                  [0 0]))
-           (is (= (coordinates {:to {:file :d
-                                     :rank :5}})
-                  [3 4])))}
-  [move]
-  (let [file (get-in move [:to :file])
-
-        rank  (get-in move [:to :rank])
-        [file rank] (->> [file rank]
-                         (map name)
-                         (map first)
-                         (map int))]
-    [(- file 97) (- rank 49)]))
+    (-> notation-string
+        piece-moved-with-squares
+        (merge move-meta))))

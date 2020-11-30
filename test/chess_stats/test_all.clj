@@ -24,7 +24,7 @@
             [chess-stats.game-state.util]
             [chess-stats.game-state.play]
             [chess-stats.pgn]
-            ;[chess-stats.game]
+            [chess-stats.game]
             ))
 
 (deftest test-all

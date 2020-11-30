@@ -439,7 +439,7 @@
         king-position  (king-position state color)]
     (under-attack? state opposite-color king-position)))
 
-(defn- valid-move?
+(defn valid-move?
   "True if a move from the starting square to the target square is valid.
    Otherwise false."
   {:test (fn []
