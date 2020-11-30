@@ -127,7 +127,7 @@
            {:from {:coordinates [start-file (color rank)]}
             :to {:coordinates [(castles file) (color rank)]}})))
 
-(defn add-coordinates
+(defn- add-coordinates
   "Add the coordinates of the destination square to the move map"
   {:test (fn[]
            (is (= (add-coordinates
@@ -136,11 +136,84 @@
                     :to {:file :d :rank :4}})
                   {:piece :pawn
                    :to {:file :d :rank :4 :coordinates [3 3]}
-                   :from {:coordinates [3 1]}}))
-           )}
+                   :from {:coordinates [3 1]}})))}
   [game move]
   (if (contains? move :castles)
     (add-castle-coordinates move (state/get-player-in-turn game))
     (as-> move m
       (assoc-in m [:to :coordinates] (coordinates-to m))
       (assoc-in m [:from :coordinates] (coordinates-from game m)))))
+
+(defn- process-move
+  "Play the move and add the game state to the map"
+  {:test (fn []
+           (let [result (process-move
+                         state/new-game
+                         {:move {:piece :pawn
+                                 :to {:file :e :rank :4}}})]
+             (is (= (-> result
+                        :state
+                        (state/get-piece [4 3]))
+                    {:type :pawn
+                     :color :white
+                     :moved? true}))))}
+  [game move-data]
+  (let [move (add-coordinates game (:move move-data))
+        state (rules/move game
+                          (get-in move [:from :coordinates])
+                          (get-in move [:to :coordinates]))]
+    {:move move
+     :state state}))
+
+
+(defn- process-move-pair
+  "Update both moves with their coordinates and resulting game state"
+  {:test (fn []
+           (let [result (process-move-pair state/new-game
+                                           {:white
+                                            {:move {:piece :pawn
+                                                    :to {:file :e :rank :4}}}
+                                            :black {:move {:piece :knight
+                                                           :to {:file :c :rank :6}}}})]
+             (is (= (-> result
+                        :black
+                        :state
+                        (state/get-piece [2 5]))
+                    {:type :knight
+                     :color :black
+                     :moved? true})))
+           )}
+  [game {:keys [black white]}]
+  (let [updated-white (process-move game white)]
+    {:white updated-white
+     :black (process-move (:state updated-white) black)}))
+
+(defn add-game-state-to-move-list
+  "Add coorinates and game state to a list of move pairs"
+  {:test (fn []
+           (let [result (add-game-state-to-move-list [{:white
+                                                       {:move {:piece :pawn
+                                                               :to {:file :e :rank :4}}}
+                                                       :black {:move {:piece :knight
+                                                                      :to {:file :c :rank :6}}}}])]
+             (is (= (-> result
+                        first
+                        :black
+                        :state
+                        (state/get-piece [4 3]))
+                    {:type :pawn
+                     :color :white
+                     :moved? true})))
+           )}
+  [moves]
+  (loop [game-state state/new-game
+         to-process moves
+         processed []]
+    (if (empty? to-process)
+      processed
+      (let [move-pair (->> to-process
+                           first
+                           (process-move-pair game-state))]
+        (recur (get-in move-pair [:black :state])
+               (rest to-process)
+               (conj processed move-pair))))))
