@@ -1,6 +1,7 @@
 (ns chess-stats.pgn
   (:require [clojure.test :refer [is]]
             [clj-pgn.core :as clj-pgn]
+            [chess-stats.game :as game]
             [chess-stats.util.notation :as notation]))
 
 
@@ -28,10 +29,20 @@
       (update-in [:black :move] parse-one-move)
       (update-in [:white :move] parse-one-move)))
 
-(defn load-game [filename]
+(defn- enrich-movelist [movelist]
+  (->> movelist
+       (map parse-moves)
+       (game/add-game-state-to-move-list)))
+
+(defn load-game
+  {:test (fn [] (is (contains? (load-game "data/mkosse_vs_Enribari74_2020.11.21.pgn") :movelist)))}
+  [filename]
   (-> filename
       clj-pgn/load-pgn
       first
-      (update :movelist
-              #(map parse-moves %))))
+      (update :movelist enrich-movelist)))
 
+(def sample-game (load-game "data/mkosse_vs_Enribari74_2020.11.21.pgn"))
+
+;sample-game
+;(:movelist sample-game)

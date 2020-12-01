@@ -115,13 +115,13 @@
 (defn- add-castle-coordinates
   "Add the KING's to and from coordinates for a castling move"
   {:test (fn []
-           (is (= (add-castle-coordinates {:castles :KINGSIDE} :white)
+           (is (= (add-castle-coordinates {:castles :kingside} :white)
                   {:from {:coordinates [4 0]}
                    :to {:coordinates [6 0]}
-                   :castles :KINGSIDE})))}
+                   :castles :kingside})))}
   [{:keys [castles] :as move} color]
   (let [rank {:white 0 :black 7}
-        file {:KINGSIDE 6 :QUEENSIDE 2}
+        file {:kingside 6 :queenside 2}
         start-file 4]
     (merge move
            {:from {:coordinates [start-file (color rank)]}
@@ -208,8 +208,7 @@
                         (state/get-piece [4 3]))
                     {:type :pawn
                      :color :white
-                     :moved? true})))
-           )}
+                     :moved? true}))))}
   [moves]
   (loop [game-state state/new-game
          to-process moves
