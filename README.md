@@ -1,23 +1,13 @@
-# Magnus
+# Chess stats
 
-[![Clojars Project](https://img.shields.io/clojars/v/magnus.svg)](https://clojars.org/magnus)
+A library for parsing PGN chess games into a format containing the game state after each move.
 
-A Clojure chess library.
-
-## Installation
-
-Using Leiningen, add Magnus to your dependencies in project.clj:
-
-[![Clojars Project](http://clojars.org/magnus/latest-version.svg)](http://clojars.org/magnus)
-
-## Usage
-
-***TODO***
+Forked from [Magnus](https://github.com/Anders-E/Magnus) and reliant upon [clj-pgn](https://github.com/mdallastella/clj-pgn). All the code in `game_state` is copied directly from Magnus, and clj-pgn is used to parse PGN files.
 
 ## License
 
-Copyright © 2020 Anders Eriksson
+Copyright © 2020 Anders Eriksson where specified;  © 2020 Madeline Kosse elswhere
 
-Magnus is released under the GNU Lesser General Public License v3 as published by the Free Software Foundation.
+Magnus (and therefore chess-stats) is released under the GNU Lesser General Public License v3 as published by the Free Software Foundation.
 
 For more information please see files `COPYING` and `COPYING.LESSER`.
