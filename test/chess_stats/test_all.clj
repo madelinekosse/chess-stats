@@ -24,8 +24,7 @@
             [chess-stats.game-state.util]
             [chess-stats.game-state.play]
             [chess-stats.pgn]
-            [chess-stats.game]
-            ))
+            [chess-stats.moves]))
 
 (deftest test-all
   ; Bootstrapping with the required namespaces, finds all the magnus.*

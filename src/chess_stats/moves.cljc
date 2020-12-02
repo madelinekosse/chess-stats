@@ -1,4 +1,4 @@
-(ns chess-stats.game
+(ns chess-stats.moves
   (:require [clojure.test :refer [is]]
             [chess-stats.util.test-utils :as tests]
             [chess-stats.game-state.construct :as state]

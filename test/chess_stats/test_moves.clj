@@ -1,6 +1,6 @@
-(ns chess-stats.test-game
+(ns chess-stats.test-moves
   (:require  [clojure.test :refer :all]
-             [chess-stats.game :as sut]
+             [chess-stats.moves :as sut]
              [chess-stats.game-state.construct :as state]))
 
 
@@ -78,6 +78,4 @@
           (is (= (state/get-piece ending-game-state [6 3])
                  {:type :rook
                   :color :white
-                  :moved? true})))))
-
-    ))
+                  :moved? true})))))))

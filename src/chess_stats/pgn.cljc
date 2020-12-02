@@ -1,7 +1,8 @@
 (ns chess-stats.pgn
   (:require [clojure.test :refer [is]]
             [clj-pgn.core :as clj-pgn]
-            [chess-stats.game :as game]
+            [cheshire.core :refer [parse-string]]
+            [chess-stats.moves :as moves]
             [chess-stats.util.notation :as notation]))
 
 
@@ -37,11 +38,24 @@
 (defn- enrich-movelist [movelist]
   (->> movelist
        (map parse-moves)
-       (game/add-game-state-to-move-list)))
+       (moves/add-game-state-to-move-list)))
+
+
+(defn merge-headers
+  "Convert list of single-entry maps to a single map, stripping quotes"
+  {:test (fn [] (is (= (merge-headers [{:Event "\"Live Chess\""} {:Site "\"Chess.com\""}])
+                       {:Event "Live Chess" :Site "Chess.com"})))}
+  [headers]
+  (->> headers
+       (apply merge)
+       (reduce-kv (fn [m k v]
+                    (assoc m k (parse-string v)))
+                  {})))
 
 (defn load-game
   [filename]
   (-> filename
       clj-pgn/load-pgn
       first
-      (update :movelist enrich-movelist)))
+      (update :movelist enrich-movelist)
+      (update :headers merge-headers)))
