@@ -58,10 +58,9 @@
 (deftest test-game-state
   (let [result (sut/add-game-state-to-move-list test-game)]
     (testing "Correct state after castling"
-      (let [state-after-white-castles (-> result
-                                          (nth 6)
-                                          :white
-                                          :state)]
+      (let [state-after-white-castles (sut/state-after-move result
+                                                            7
+                                                            :white)]
         (testing "King is moved"
           (is (= (state/get-piece state-after-white-castles [6 0])
                  {:type :king

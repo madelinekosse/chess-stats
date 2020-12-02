@@ -229,3 +229,11 @@
     (if (:black last-move)
       (get-in last-move [:black :state])
       (get-in last-move [:white :state]))))
+
+(defn state-after-move
+  "For a list of moves, return the game state after given move number and color"
+  [movelist move-number color]
+  (-> movelist
+      (nth (dec move-number))
+      color
+      :state))
