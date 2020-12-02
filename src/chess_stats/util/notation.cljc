@@ -121,7 +121,7 @@
                           :rank :3}
                    :to {:file :d :rank :5}})))}
   [notation-string]
-  (let [[move-meta notation-string] (if (str/includes? notation-string "=")
+    (let [[move-meta notation-string] (if (str/includes? notation-string "=")
                                      [{:promotion (->> notation-string
                                                       last
                                                       str

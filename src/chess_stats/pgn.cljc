@@ -23,11 +23,16 @@
            (is (= (parse-moves {:white {:move [:KINGCASTLE]}
                                 :black {:move [:QUEENCASTLE]}})
                   {:white {:move {:castles :kingside}}
-                   :black {:move {:castles :queenside}}})))}
-  [movepair]
-  (-> movepair
-      (update-in [:black :move] parse-one-move)
-      (update-in [:white :move] parse-one-move)))
+                   :black {:move {:castles :queenside}}}))
+           (is (= (parse-moves {:white {:move "d4"}
+                                :black nil})
+                  {:white {:move {:piece :pawn
+                                  :to {:file :d :rank :4}}}
+                   :black nil})))}
+  [{:keys [black white] :as movepair}]
+  (cond-> movepair
+    white (update-in [:white :move] parse-one-move)
+    black (update-in [:black :move] parse-one-move)))
 
 (defn- enrich-movelist [movelist]
   (->> movelist
@@ -35,14 +40,8 @@
        (game/add-game-state-to-move-list)))
 
 (defn load-game
-  {:test (fn [] (is (contains? (load-game "data/mkosse_vs_Enribari74_2020.11.21.pgn") :movelist)))}
   [filename]
   (-> filename
       clj-pgn/load-pgn
       first
       (update :movelist enrich-movelist)))
-
-(def sample-game (load-game "data/mkosse_vs_Enribari74_2020.11.21.pgn"))
-
-;sample-game
-;(:movelist sample-game)

@@ -31,7 +31,6 @@
     (update m k f)
     m))
 
-;;TODO: this is what's breaking when it's nil
 (defn- file&rank->indices
   "For a map containing file and/or rank keywords, convert them to board indixes"
   {:test (fn []
@@ -186,12 +185,13 @@
                         (state/get-piece [2 5]))
                     {:type :knight
                      :color :black
-                     :moved? true})))
-           )}
+                     :moved? true}))))}
   [game {:keys [black white]}]
   (let [updated-white (process-move game white)]
-    {:white updated-white
-     :black (process-move (:state updated-white) black)}))
+    (merge {:white updated-white}
+           (if black
+             {:black (process-move (:state updated-white) black)}
+             {}))))
 
 (defn add-game-state-to-move-list
   "Add coorinates and game state to a list of move pairs"
@@ -221,3 +221,11 @@
         (recur (get-in move-pair [:black :state])
                (rest to-process)
                (conj processed move-pair))))))
+
+(defn end-state
+  "For a list of moves and corresponding game state, return the final game state"
+  [movelist]
+  (let [last-move (last movelist)]
+    (if (:black last-move)
+      (get-in last-move [:black :state])
+      (get-in last-move [:white :state]))))
